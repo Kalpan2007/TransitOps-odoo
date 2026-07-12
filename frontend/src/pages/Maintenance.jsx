@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Check, Search } from 'lucide-react';
+import { Plus, X, Check, Search, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const Modal = ({ title, onClose, children }) => (
   <div style={{
@@ -57,6 +59,31 @@ const Maintenance = ({ userRole }) => {
   const [vehicleFilter, setVehicleFilter] = useState('');
 
   const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(records, { defaultSortKey: 'start_date', defaultOrder: 'DESC' });
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const MAINT_COLUMNS = [
+    { key: 'id', label: 'Work Order' },
+    { key: 'vehicle_reg', label: 'Vehicle' },
+    { key: 'maintenance_type', label: 'Type' },
+    { key: 'description', label: 'Description' },
+    { key: 'maintenance_cost', label: 'Cost' },
+    { key: 'start_date', label: 'Start Date' },
+    { key: 'end_date', label: 'End Date' },
+    { key: 'status', label: 'Status' },
+  ];
+  const { exportCsv, exportPdf } = useExport({
+    title: 'Maintenance Work Orders',
+    columns: MAINT_COLUMNS,
+    data: sortedItems,
+    filename: 'maintenance_logs',
+    subtitle: 'Vehicle maintenance history, costs, and work order tracking',
+    summaryItems: [
+      { label: 'Total Records', value: records.length },
+      { label: 'Open (In Shop)', value: openCount },
+      { label: 'Completed', value: closedCount },
+      { label: 'Total Cost', value: `\u20B9${records.reduce((s, r) => s + Number(r.maintenance_cost || 0), 0).toLocaleString('en-IN')}` },
+    ]
+  });
 
   useEffect(() => { setSearchQuery(search); }, [search]);
   useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
@@ -197,6 +224,9 @@ const Maintenance = ({ userRole }) => {
           <option value="">All Vehicles</option>
           {vehicles.map(v => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
         </select>
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
         {canManage && (
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             <Plus size={14} /> Log Maintenance
@@ -341,6 +371,15 @@ const Maintenance = ({ userRole }) => {
           </form>
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title="Maintenance Logs"
+        rowCount={sortedItems.length}
+      />
     </div>
   );
 };

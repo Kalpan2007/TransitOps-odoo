@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, AlertCircle, CheckCircle, Zap, Check, Play, Search } from 'lucide-react';
+import { Plus, X, AlertCircle, CheckCircle, Zap, Check, Play, Search, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const Modal = ({ title, onClose, children, wide = false }) => (
   <div style={{
@@ -570,6 +572,31 @@ const Trips = ({ userRole }) => {
 
   const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(trips, { defaultSortKey: 'id', defaultOrder: 'DESC' });
 
+  const [showExportModal, setShowExportModal] = useState(false);
+  const TRIP_COLUMNS = [
+    { key: 'trip_code', label: 'Trip Code' },
+    { key: 'source', label: 'Origin' },
+    { key: 'destination', label: 'Destination' },
+    { key: 'cargo_weight', label: 'Cargo Weight (kg)' },
+    { key: 'planned_distance', label: 'Distance (km)' },
+    { key: 'vehicle_reg', label: 'Vehicle' },
+    { key: 'driver_name', label: 'Driver' },
+    { key: 'status', label: 'Status' },
+  ];
+  const { exportCsv, exportPdf } = useExport({
+    title: 'Trip Operations Report',
+    columns: TRIP_COLUMNS,
+    data: sortedItems,
+    filename: 'trips',
+    subtitle: 'Trip dispatch history, routes, and status tracking',
+    summaryItems: [
+      { label: 'Total Trips', value: trips.length },
+      { label: 'Active', value: trips.filter(t => t.status === 'DISPATCHED').length },
+      { label: 'Completed', value: trips.filter(t => t.status === 'COMPLETED').length },
+      { label: 'Cancelled', value: trips.filter(t => t.status === 'CANCELLED').length },
+    ]
+  });
+
   useEffect(() => { setSearchQuery(search); }, [search]);
   useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
   useEffect(() => { setFilter('vehicle_reg', vehicleFilter); }, [vehicleFilter, setFilter]);
@@ -662,6 +689,9 @@ const Trips = ({ userRole }) => {
           {drivers.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
         </select>
         <div style={{ flex: 1 }} />
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
         {canDispatch && (
           <button className="btn btn-primary" onClick={() => setShowWizard(true)}>
             <Plus size={14} /> Dispatch New Trip
@@ -751,6 +781,15 @@ const Trips = ({ userRole }) => {
           />
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title="Trips"
+        rowCount={sortedItems.length}
+      />
     </div>
   );
 };

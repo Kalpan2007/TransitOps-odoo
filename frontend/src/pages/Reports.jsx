@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Fuel, DollarSign, BarChart3, Navigation } from 'lucide-react';
+import { RefreshCw, Fuel, DollarSign, BarChart3, Navigation, Download } from 'lucide-react';
 import { api } from '../api';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const MetricCard = ({ label, value, sub, color = 'var(--accent-color)' }) => (
   <div className="card" style={{ padding: '14px 16px' }}>
@@ -120,6 +122,67 @@ const Reports = () => {
   const totalDistance = fuelEfficiency.reduce((s, v) => s + Number(v.totalDistanceKm || 0), 0);
   const totalFuelLiters = fuelEfficiency.reduce((s, v) => s + Number(v.totalFuelLiters || 0), 0);
 
+  // Export state
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportType, setExportType] = useState('fuel_efficiency');
+  const EXPORT_TYPES = [
+    { type: 'fuel_efficiency', label: 'Fuel Efficiency', columns: [
+      { key: 'registration_number', label: 'Vehicle' }, { key: 'totalDistanceKm', label: 'Distance (km)' },
+      { key: 'totalFuelLiters', label: 'Fuel (L)' }, { key: 'avgFuelPer100km', label: 'Avg L/100km' },
+    ]},
+    { type: 'operational_cost', label: 'Operational Costs', columns: [
+      { key: 'registration_number', label: 'Vehicle' }, { key: 'totalFuelCost', label: 'Fuel Cost' },
+      { key: 'totalMaintenanceCost', label: 'Maintenance Cost' }, { key: 'totalOperationalCost', label: 'Total Cost' },
+    ]},
+    { type: 'vehicle_roi', label: 'Vehicle ROI', columns: [
+      { key: 'registration_number', label: 'Vehicle' }, { key: 'revenue', label: 'Revenue' },
+      { key: 'operationalCost', label: 'Cost' }, { key: 'netProfit', label: 'Profit' }, { key: 'roiPercentage', label: 'ROI %' },
+    ]},
+    { type: 'trip_summary', label: 'Trip Summary', columns: [
+      { key: 'registration_number', label: 'Vehicle' }, { key: 'tripCount', label: 'Trips' },
+      { key: 'completedTrips', label: 'Completed' }, { key: 'cancelledTrips', label: 'Cancelled' },
+    ]},
+  ];
+  const activeExportConfig = EXPORT_TYPES.find(e => e.type === exportType) || EXPORT_TYPES[0];
+  const activeExportData = exportType === 'fuel_efficiency' ? fuelEfficiency
+    : exportType === 'operational_cost' ? operationalCost
+    : exportType === 'vehicle_roi' ? vehicleROI
+    : tripCounts;
+  const { exportCsv, exportPdf } = useExport({
+    title: activeExportConfig.label,
+    columns: activeExportConfig.columns,
+    data: activeExportData,
+    filename: `report_${exportType}`,
+    subtitle: `${dateRange.startDate || 'All'} to ${dateRange.endDate || 'All'} · TransitOps Analytics`,
+    summaryItems: exportType === 'vehicle_roi'
+      ? [
+          { label: 'Total Revenue', value: `\u20B9${totalRevenue.toLocaleString('en-IN')}` },
+          { label: 'Operational Cost', value: `\u20B9${totalOpCost.toLocaleString('en-IN')}` },
+          { label: 'Net Profit', value: `\u20B9${totalNetProfit.toLocaleString('en-IN')}` },
+          { label: 'Vehicles', value: vehicleROI.length },
+        ]
+      : exportType === 'fuel_efficiency'
+      ? [
+          { label: 'Vehicles', value: fuelEfficiency.length },
+          { label: 'Total Distance', value: `${totalDistance.toLocaleString()} km` },
+          { label: 'Total Fuel', value: `${totalFuelLiters.toFixed(1)}L` },
+          { label: 'Avg L/100km', value: totalDistance > 0 ? (totalFuelLiters / totalDistance * 100).toFixed(1) : '0' },
+        ]
+      : exportType === 'operational_cost'
+      ? [
+          { label: 'Vehicles', value: operationalCost.length },
+          { label: 'Total Fuel Cost', value: `\u20B9${operationalCost.reduce((s, v) => s + Number(v.totalFuelCost || 0), 0).toLocaleString('en-IN')}` },
+          { label: 'Total Maint Cost', value: `\u20B9${operationalCost.reduce((s, v) => s + Number(v.totalMaintenanceCost || 0), 0).toLocaleString('en-IN')}` },
+          { label: 'Grand Total', value: `\u20B9${operationalCost.reduce((s, v) => s + Number(v.totalOperationalCost || 0), 0).toLocaleString('en-IN')}` },
+        ]
+      : [
+          { label: 'Total Trips', value: totalTrips },
+          { label: 'Vehicles', value: tripCounts.length },
+          { label: 'Total Distance', value: `${tripCounts.reduce((s, v) => s + Number(v.totalDistance || 0), 0).toLocaleString()} km` },
+          { label: 'Completion Rate', value: totalTrips > 0 ? `${Math.round(tripCounts.reduce((s, v) => s + Number(v.completedTrips || 0), 0) / totalTrips * 100)}%` : '0%' },
+        ]
+  });
+
   return (
     <div>
       {/* Date Filter + Export Toolbar */}
@@ -140,17 +203,12 @@ const Reports = () => {
           <RefreshCw size={14} /> Apply
         </button>
         <div style={{ flex: 1 }} />
-        {[
-          { type: 'fuel_efficiency', label: 'Fuel CSV', icon: Fuel },
-          { type: 'operational_cost', label: 'Cost CSV', icon: DollarSign },
-          { type: 'vehicle_roi', label: 'ROI CSV', icon: BarChart3 },
-          { type: 'trip_summary', label: 'Trips CSV', icon: Navigation },
-        ].map(({ type, label, icon: Icon }) => (
-          <button key={type} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-            onClick={() => api.exportCsv(type)}>
-            <Icon size={12} /> {label}
-          </button>
-        ))}
+        <select value={exportType} onChange={e => setExportType(e.target.value)} style={{ width: '170px', padding: '6px 10px', fontSize: '12px' }}>
+          {EXPORT_TYPES.map(e => <option key={e.type} value={e.type}>{e.label}</option>)}
+        </select>
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
       </div>
 
       {/* Overview KPI Strip */}
@@ -377,6 +435,15 @@ const Reports = () => {
           )}
         </>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title={activeExportConfig.label}
+        rowCount={activeExportData.length}
+      />
     </div>
   );
 };
