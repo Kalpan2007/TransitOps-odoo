@@ -5,10 +5,10 @@ const { authenticateJWT, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/users - List users (FLEET_MANAGER or Admin only)
+// GET /api/users - List users (FLEET_MANAGER only)
 router.get('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, res, next) => {
   try {
-    const result = await query('SELECT id, name, email, role, status, created_at FROM users ORDER BY id DESC');
+    const result = await query('SELECT id, name, email, role, status, driver_id, created_at FROM users ORDER BY id DESC');
     res.json(result.rows);
   } catch (error) {
     next(error);
@@ -17,7 +17,7 @@ router.get('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, re
 
 // POST /api/users - Create a new user (FLEET_MANAGER only)
 router.post('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, res, next) => {
-  const { name, email, password, role, status } = req.body;
+  const { name, email, password, role, status, driver_id } = req.body;
 
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Required fields: name, email, password, role.' });
@@ -34,12 +34,13 @@ router.post('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, r
     const passwordHash = await bcrypt.hash(password, salt);
 
     const userStatus = status || 'ACTIVE';
+    const linkedDriverId = (role === 'DRIVER' && driver_id) ? driver_id : null;
     const insertQuery = `
-      INSERT INTO users (name, email, password_hash, role, status)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, name, email, role, status, created_at
+      INSERT INTO users (name, email, password_hash, role, status, driver_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, name, email, role, status, driver_id, created_at
     `;
-    const result = await query(insertQuery, [name, email, passwordHash, role, userStatus]);
+    const result = await query(insertQuery, [name, email, passwordHash, role, userStatus, linkedDriverId]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -49,7 +50,7 @@ router.post('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, r
 // PUT /api/users/:id - Update user details (FLEET_MANAGER only)
 router.put('/:id', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, res, next) => {
   const userId = parseInt(req.params.id);
-  const { name, email, password, role, status } = req.body;
+  const { name, email, password, role, status, driver_id } = req.body;
 
   try {
     const exists = await query('SELECT id FROM users WHERE id = $1', [userId]);
@@ -65,6 +66,9 @@ router.put('/:id', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req,
     }
 
     const fields = { name, email, role, status };
+    // Include driver_id if provided (set to null explicitly allowed)
+    if (driver_id !== undefined) fields.driver_id = driver_id || null;
+
     const queryParts = [];
     const values = [];
     let idx = 1;
@@ -94,7 +98,7 @@ router.put('/:id', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req,
       UPDATE users
       SET ${queryParts.join(', ')}, updated_at = NOW()
       WHERE id = $${idx}
-      RETURNING id, name, email, role, status, created_at
+      RETURNING id, name, email, role, status, driver_id, created_at
     `;
 
     const result = await query(updateQuery, values);

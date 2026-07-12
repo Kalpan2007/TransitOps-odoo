@@ -29,7 +29,7 @@ const seedDatabase = async () => {
 
     // 2. Create Enums and Types
     await client.query(`
-      CREATE TYPE user_role AS ENUM ('FLEET_MANAGER', 'DISPATCHER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST');
+      CREATE TYPE user_role AS ENUM ('FLEET_MANAGER', 'DISPATCHER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST', 'DRIVER');
       CREATE TYPE user_status AS ENUM ('ACTIVE', 'INACTIVE');
       CREATE TYPE vehicle_status AS ENUM ('AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED');
       CREATE TYPE driver_status AS ENUM ('AVAILABLE', 'ON_TRIP', 'OFF_DUTY', 'SUSPENDED');
@@ -47,6 +47,7 @@ const seedDatabase = async () => {
         password_hash VARCHAR(255) NOT NULL,
         role user_role NOT NULL,
         status user_status DEFAULT 'ACTIVE',
+        driver_id INT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -164,39 +165,39 @@ const seedDatabase = async () => {
 
     console.log('Tables, types, and indexes created successfully.');
 
-    // 5. Seed Users with secure hashed passwords
+    // 5. Seed Vehicles
+    await client.query(`
+      INSERT INTO vehicles (registration_number, name, model, type, maximum_load_capacity, current_odometer, acquisition_cost, region, status) VALUES
+      ('GJ01AB1234', 'Van-05',     'Tata Winger',      'Van',     500.00, 10000.00, 15000.00, 'West',  'AVAILABLE'),
+      ('GJ01AB5678', 'Truck-01',   'Ashok Leyland',    'Truck',  2000.00, 25000.00, 35000.00, 'West',  'AVAILABLE'),
+      ('GJ01AB9012', 'Flatbed-02', 'BharatBenz',       'Flatbed',5000.00,  5000.00, 55000.00, 'North', 'AVAILABLE'),
+      ('GJ01AB3456', 'Van-06',     'Mahindra Imperio', 'Van',     800.00, 15000.00, 18000.00, 'South', 'RETIRED');
+    `);
+
+    // 6. Seed Drivers (before users so DRIVER user can link to a driver record)
+    // Alex = valid license | Sarah = expiring soon | John = expired | Mike = suspended
+    const driverSeedRes = await client.query(`
+      INSERT INTO drivers (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status) VALUES
+      ('Alex',  'LIC1234567890', 'Heavy Commercial', '2030-12-31', '+919876543210', 95, 'AVAILABLE'),
+      ('Sarah', 'LIC9876543210', 'Light Commercial', '2027-07-13', '+919876543211', 88, 'AVAILABLE'),
+      ('John',  'LIC5555555555', 'Heavy Commercial', '2025-01-01', '+919876543212', 72, 'AVAILABLE'),
+      ('Mike',  'LIC4444444444', 'Heavy Commercial', '2029-06-30', '+919876543213', 45, 'SUSPENDED')
+      RETURNING id, name;
+    `);
+    const alexDriver = driverSeedRes.rows.find(d => d.name === 'Alex');
+
+    // 7. Seed Users (5 roles) – DRIVER user is linked to Alex's driver record
     const salt = await bcrypt.genSalt(10);
     const commonPasswordHash = await bcrypt.hash('Password@123', salt);
 
     await client.query(`
-      INSERT INTO users (name, email, password_hash, role, status) VALUES
-      ('Alice Manager', 'manager@transitops.com', $1, 'FLEET_MANAGER', 'ACTIVE'),
-      ('Bob Dispatcher', 'dispatcher@transitops.com', $1, 'DISPATCHER', 'ACTIVE'),
-      ('Charlie Safety', 'safety@transitops.com', $1, 'SAFETY_OFFICER', 'ACTIVE'),
-      ('David Analyst', 'analyst@transitops.com', $1, 'FINANCIAL_ANALYST', 'ACTIVE');
-    `, [commonPasswordHash]);
-
-    // 6. Seed Vehicles
-    await client.query(`
-      INSERT INTO vehicles (registration_number, name, model, type, maximum_load_capacity, current_odometer, acquisition_cost, region, status) VALUES
-      ('GJ01AB1234', 'Van-05', 'Tata Winger', 'Van', 500.00, 10000.00, 15000.00, 'West', 'AVAILABLE'),
-      ('GJ01AB5678', 'Truck-01', 'Ashok Leyland', 'Truck', 2000.00, 25000.00, 35000.00, 'West', 'AVAILABLE'),
-      ('GJ01AB9012', 'Flatbed-02', 'BharatBenz', 'Flatbed', 5000.00, 5000.00, 55000.00, 'North', 'AVAILABLE'),
-      ('GJ01AB3456', 'Van-06', 'Mahindra Imperio', 'Van', 800.00, 15000.00, 18000.00, 'South', 'RETIRED');
-    `);
-
-    // 7. Seed Drivers
-    // Alex has a valid license (expiring in 2030)
-    // Sarah has a license expiring tomorrow
-    // John has an expired license (expired in 2025)
-    // Mike is suspended
-    await client.query(`
-      INSERT INTO drivers (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status) VALUES
-      ('Alex', 'LIC1234567890', 'Heavy Commercial', '2030-12-31', '+919876543210', 95, 'AVAILABLE'),
-      ('Sarah', 'LIC9876543210', 'Light Commercial', '2027-07-13', '+919876543211', 88, 'AVAILABLE'),
-      ('John', 'LIC5555555555', 'Heavy Commercial', '2025-01-01', '+919876543212', 72, 'AVAILABLE'),
-      ('Mike', 'LIC4444444444', 'Heavy Commercial', '2029-06-30', '+919876543213', 45, 'SUSPENDED');
-    `);
+      INSERT INTO users (name, email, password_hash, role, status, driver_id) VALUES
+      ('Alice Manager',  'manager@transitops.com',    $1, 'FLEET_MANAGER',    'ACTIVE', NULL),
+      ('Bob Dispatcher', 'dispatcher@transitops.com', $1, 'DISPATCHER',        'ACTIVE', NULL),
+      ('Alex Driver',    'driver@transitops.com',     $1, 'DRIVER',            'ACTIVE', $2),
+      ('Charlie Safety', 'safety@transitops.com',     $1, 'SAFETY_OFFICER',    'ACTIVE', NULL),
+      ('David Analyst',  'analyst@transitops.com',    $1, 'FINANCIAL_ANALYST', 'ACTIVE', NULL);
+    `, [commonPasswordHash, alexDriver.id]);
 
     await client.query('COMMIT');
     console.log('Database seeded successfully.');

@@ -36,7 +36,7 @@ const run = async () => {
     // STEP 2: Enums
     // ──────────────────────────────────────────────
     await client.query(`
-      CREATE TYPE user_role       AS ENUM ('FLEET_MANAGER','DISPATCHER','SAFETY_OFFICER','FINANCIAL_ANALYST');
+      CREATE TYPE user_role       AS ENUM ('FLEET_MANAGER','DISPATCHER','DRIVER','SAFETY_OFFICER','FINANCIAL_ANALYST');
       CREATE TYPE user_status     AS ENUM ('ACTIVE','INACTIVE');
       CREATE TYPE vehicle_status  AS ENUM ('AVAILABLE','ON_TRIP','IN_SHOP','RETIRED');
       CREATE TYPE driver_status   AS ENUM ('AVAILABLE','ON_TRIP','OFF_DUTY','SUSPENDED');
@@ -56,6 +56,7 @@ const run = async () => {
         password_hash VARCHAR(255) NOT NULL,
         role user_role NOT NULL,
         status user_status DEFAULT 'ACTIVE',
+        driver_id INT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -159,17 +160,18 @@ const run = async () => {
     console.log('✅ Schema created.\n');
 
     // ──────────────────────────────────────────────
-    // STEP 4: Seed Users
+    // STEP 4: Seed Users (after drivers, so DRIVER user can link)
     // ──────────────────────────────────────────────
     const pwHash = await bcrypt.hash('Password@123', 10);
+    // Users WITHOUT driver link first; DRIVER user added after drivers are seeded
     await client.query(`
-      INSERT INTO users (name, email, password_hash, role) VALUES
-      ('kalp',    'kalp@transitops.com',    $1, 'FLEET_MANAGER'),
-      ('kalpan',  'kalpan@transitops.com',  $1, 'DISPATCHER'),
-      ('aray',    'aray@transitops.com',    $1, 'SAFETY_OFFICER'),
-      ('dax',     'dax@transitops.com',     $1, 'FINANCIAL_ANALYST')
+      INSERT INTO users (name, email, password_hash, role, driver_id) VALUES
+      ('kalp',    'kalp@transitops.com',    $1, 'FLEET_MANAGER',    NULL),
+      ('kalpan',  'kalpan@transitops.com',  $1, 'DISPATCHER',        NULL),
+      ('aray',    'aray@transitops.com',    $1, 'SAFETY_OFFICER',    NULL),
+      ('dax',     'dax@transitops.com',     $1, 'FINANCIAL_ANALYST', NULL)
     `, [pwHash]);
-    console.log('✅ 4 custom users seeded.');
+    console.log('✅ 4 custom users seeded (DRIVER user will be added after drivers).');
 
     // ──────────────────────────────────────────────
     // STEP 5: Seed Vehicles (12 vehicles)
@@ -217,6 +219,14 @@ const run = async () => {
       RETURNING id, name, status, safety_score, license_expiry_date
     `);
     console.log(`✅ ${driversRes.rowCount} drivers seeded.`);
+
+    // Add the DRIVER user linked to Rajan Mehta (first driver)
+    const rajanId = driversRes.rows[0].id;
+    await client.query(`
+      INSERT INTO users (name, email, password_hash, role, driver_id) VALUES
+      ('Rajan (Driver)',  'rajan@transitops.com', $1, 'DRIVER', $2)
+    `, [pwHash, rajanId]);
+    console.log('✅ DRIVER user (rajan@transitops.com) seeded and linked to Rajan Mehta.');
 
     const drivers = driversRes.rows;
     const dAvailable = drivers.filter(d => d.status === 'AVAILABLE');

@@ -54,7 +54,7 @@ router.post('/login', async (req, res, next) => {
 // GET /api/auth/me
 router.get('/me', authenticateJWT, async (req, res, next) => {
   try {
-    const userRes = await query('SELECT id, name, email, role, status FROM users WHERE id = $1', [req.user.userId]);
+    const userRes = await query('SELECT id, name, email, role, status, driver_id FROM users WHERE id = $1', [req.user.userId]);
     if (userRes.rows.length === 0) {
       return res.status(404).json({ error: 'User not found.' });
     }
