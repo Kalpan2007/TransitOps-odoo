@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET /api/vehicles - List vehicles with search and filtering
 router.get('/', authenticateJWT, async (req, res, next) => {
-  const { type, status, region, search } = req.query;
+  const { type, status, region, search, sort, order } = req.query;
 
   let queryText = 'SELECT * FROM vehicles WHERE 1=1';
   const queryParams = [];
@@ -36,7 +36,10 @@ router.get('/', authenticateJWT, async (req, res, next) => {
     paramIndex++;
   }
 
-  queryText += ' ORDER BY id DESC';
+  const allowedSort = { id: 'id', registration_number: 'registration_number', name: 'name', model: 'model', type: 'type', maximum_load_capacity: 'maximum_load_capacity', current_odometer: 'current_odometer', status: 'status' };
+  const sortCol = allowedSort[sort] || 'id';
+  const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+  queryText += ` ORDER BY ${sortCol} ${sortOrder}`;
 
   try {
     const result = await query(queryText, queryParams);

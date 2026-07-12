@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const Modal = ({ title, onClose, children }) => (
   <div style={{
@@ -49,6 +51,37 @@ const Expenses = ({ userRole }) => {
 
   const EXPENSE_CATEGORIES = ['TOLL', 'MAINTENANCE', 'PARKING', 'PERMIT', 'OTHER'];
 
+  // Search & filter state for fuel tab
+  const [fuelSearch, setFuelSearch] = useState('');
+  const [fuelVehicleFilter, setFuelVehicleFilter] = useState('');
+  const [fuelStartDate, setFuelStartDate] = useState('');
+  const [fuelEndDate, setFuelEndDate] = useState('');
+
+  // Search & filter state for expenses tab
+  const [expSearch, setExpSearch] = useState('');
+  const [expVehicleFilter, setExpVehicleFilter] = useState('');
+  const [expTypeFilter, setExpTypeFilter] = useState('');
+  const [expStartDate, setExpStartDate] = useState('');
+  const [expEndDate, setExpEndDate] = useState('');
+
+  const fuelData = useSortableData(fuelLogs, { defaultSortKey: 'fuel_date', defaultOrder: 'DESC' });
+  const expenseData = useSortableData(expenses, { defaultSortKey: 'expense_date', defaultOrder: 'DESC' });
+
+  // Sync search/filter state to hooks
+  useEffect(() => { fuelData.setSearchQuery(fuelSearch); }, [fuelSearch]);
+  useEffect(() => {
+    fuelData.setFilter('vehicle_id', fuelVehicleFilter);
+  }, [fuelVehicleFilter]);
+  useEffect(() => {
+    // Date filters are applied at render time via filteredFuel/filteredExpenses
+  }, [fuelVehicleFilter, fuelStartDate, fuelEndDate, fuelLogs]);
+
+  useEffect(() => { expenseData.setSearchQuery(expSearch); }, [expSearch]);
+  useEffect(() => {
+    expenseData.setFilter('vehicle_id', expVehicleFilter);
+    expenseData.setFilter('expense_type', expTypeFilter);
+  }, [expVehicleFilter, expTypeFilter]);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -67,6 +100,20 @@ const Expenses = ({ userRole }) => {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Apply date filters to fuel data
+  const filteredFuel = fuelData.sortedItems.filter(f => {
+    if (fuelStartDate && f.fuel_date < fuelStartDate) return false;
+    if (fuelEndDate && f.fuel_date > fuelEndDate) return false;
+    return true;
+  });
+
+  // Apply date filters to expense data
+  const filteredExpenses = expenseData.sortedItems.filter(e => {
+    if (expStartDate && e.expense_date < expStartDate) return false;
+    if (expEndDate && e.expense_date > expEndDate) return false;
+    return true;
+  });
 
   const totalFuelCost = fuelLogs.reduce((s, f) => s + Number(f.fuel_cost || 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -173,6 +220,53 @@ const Expenses = ({ userRole }) => {
         )}
       </div>
 
+      {/* Search & Filter Toolbar */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        {tab === 'fuel' ? (
+          <>
+            <div style={{ position: 'relative', minWidth: '220px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                value={fuelSearch}
+                onChange={e => setFuelSearch(e.target.value)}
+                placeholder="Search vehicle…"
+                style={{ paddingLeft: '32px', width: '100%' }}
+              />
+            </div>
+            <select value={fuelVehicleFilter} onChange={e => setFuelVehicleFilter(e.target.value)} style={{ width: '160px' }}>
+              <option value="">All Vehicles</option>
+              {vehicles.map(v => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
+            </select>
+            <input type="date" value={fuelStartDate} onChange={e => setFuelStartDate(e.target.value)} style={{ width: '155px' }} />
+            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>to</span>
+            <input type="date" value={fuelEndDate} onChange={e => setFuelEndDate(e.target.value)} style={{ width: '155px' }} />
+          </>
+        ) : (
+          <>
+            <div style={{ position: 'relative', minWidth: '220px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                value={expSearch}
+                onChange={e => setExpSearch(e.target.value)}
+                placeholder="Search vehicle, type, description…"
+                style={{ paddingLeft: '32px', width: '100%' }}
+              />
+            </div>
+            <select value={expVehicleFilter} onChange={e => setExpVehicleFilter(e.target.value)} style={{ width: '160px' }}>
+              <option value="">All Vehicles</option>
+              {vehicles.map(v => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
+            </select>
+            <select value={expTypeFilter} onChange={e => setExpTypeFilter(e.target.value)} style={{ width: '140px' }}>
+              <option value="">All Types</option>
+              {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input type="date" value={expStartDate} onChange={e => setExpStartDate(e.target.value)} style={{ width: '155px' }} />
+            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>to</span>
+            <input type="date" value={expEndDate} onChange={e => setExpEndDate(e.target.value)} style={{ width: '155px' }} />
+          </>
+        )}
+      </div>
+
       {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
 
       {/* Fuel Logs Table */}
@@ -181,19 +275,19 @@ const Expenses = ({ userRole }) => {
           <table>
             <thead>
               <tr>
-                <th>Log Code</th>
-                <th>Vehicle</th>
+                <SortHeader label="Log Code" sortKey="id" sortConfig={fuelData.sortConfig} onSort={fuelData.requestSort} />
+                <SortHeader label="Vehicle" sortKey="vehicle_reg" sortConfig={fuelData.sortConfig} onSort={fuelData.requestSort} />
                 <th>Linked Trip</th>
-                <th>Quantity</th>
-                <th>Total Cost</th>
+                <SortHeader label="Quantity" sortKey="fuel_quantity_liters" sortConfig={fuelData.sortConfig} onSort={fuelData.requestSort} />
+                <SortHeader label="Total Cost" sortKey="fuel_cost" sortConfig={fuelData.sortConfig} onSort={fuelData.requestSort} />
                 <th>Odometer</th>
-                <th>Fill Date</th>
+                <SortHeader label="Fill Date" sortKey="fuel_date" sortConfig={fuelData.sortConfig} onSort={fuelData.requestSort} />
               </tr>
             </thead>
             <tbody>
               {loading && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-              {!loading && fuelLogs.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No fuel logs.</td></tr>}
-              {fuelLogs.map(f => (
+              {!loading && filteredFuel.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No fuel logs found.</td></tr>}
+              {filteredFuel.map(f => (
                 <tr key={f.id}>
                   <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>#FL-{f.id}</td>
                   <td style={{ fontWeight: '500' }}>{f.vehicle_reg} / {f.vehicle_name || `ID: ${f.vehicle_id}`}</td>
@@ -217,19 +311,19 @@ const Expenses = ({ userRole }) => {
           <table>
             <thead>
               <tr>
-                <th>Expense Code</th>
-                <th>Vehicle</th>
+                <SortHeader label="Expense Code" sortKey="id" sortConfig={expenseData.sortConfig} onSort={expenseData.requestSort} />
+                <SortHeader label="Vehicle" sortKey="vehicle_reg" sortConfig={expenseData.sortConfig} onSort={expenseData.requestSort} />
                 <th>Linked Trip</th>
-                <th>Type</th>
+                <SortHeader label="Type" sortKey="expense_type" sortConfig={expenseData.sortConfig} onSort={expenseData.requestSort} />
                 <th>Description</th>
-                <th>Amount</th>
-                <th>Date</th>
+                <SortHeader label="Amount" sortKey="amount" sortConfig={expenseData.sortConfig} onSort={expenseData.requestSort} />
+                <SortHeader label="Date" sortKey="expense_date" sortConfig={expenseData.sortConfig} onSort={expenseData.requestSort} />
               </tr>
             </thead>
             <tbody>
               {loading && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-              {!loading && expenses.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>}
-              {expenses.map(e => (
+              {!loading && filteredExpenses.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>}
+              {filteredExpenses.map(e => (
                 <tr key={e.id}>
                   <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>#EXP-{e.id}</td>
                   <td>{e.vehicle_reg || `ID: ${e.vehicle_id}`}</td>

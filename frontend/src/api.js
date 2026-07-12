@@ -65,17 +65,17 @@ export const api = {
     fetch(`${API_BASE}/trips/my-trips`, { headers: headers() }).then(handleResponse),
 
   // Maintenance
-  getMaintenance: () => fetch(`${API_BASE}/maintenance`, { headers: headers() }).then(handleResponse),
+  getMaintenance: (params = {}) => fetch(`${API_BASE}/maintenance?${new URLSearchParams(params)}`, { headers: headers() }).then(handleResponse),
   createMaintenance: (data) =>
     fetch(`${API_BASE}/maintenance`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
   completeMaintenance: (id, data) =>
     fetch(`${API_BASE}/maintenance/${id}/complete`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
 
   // Expenses
-  getFuelLogs: () => fetch(`${API_BASE}/expenses/fuel`, { headers: headers() }).then(handleResponse),
+  getFuelLogs: (params = {}) => fetch(`${API_BASE}/expenses/fuel?${new URLSearchParams(params)}`, { headers: headers() }).then(handleResponse),
   createFuelLog: (data) =>
     fetch(`${API_BASE}/expenses/fuel`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
-  getExpenses: () => fetch(`${API_BASE}/expenses/operational`, { headers: headers() }).then(handleResponse),
+  getExpenses: (params = {}) => fetch(`${API_BASE}/expenses/operational?${new URLSearchParams(params)}`, { headers: headers() }).then(handleResponse),
   createExpense: (data) =>
     fetch(`${API_BASE}/expenses/operational`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
 
@@ -106,7 +106,7 @@ export const api = {
   },
 
   // Users
-  getUsers: () => fetch(`${API_BASE}/users`, { headers: headers() }).then(handleResponse),
+  getUsers: (params = {}) => fetch(`${API_BASE}/users?${new URLSearchParams(params)}`, { headers: headers() }).then(handleResponse),
   createUser: (data) =>
     fetch(`${API_BASE}/users`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
   updateUser: (id, data) =>

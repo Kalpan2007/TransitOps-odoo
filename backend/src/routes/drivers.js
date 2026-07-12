@@ -26,7 +26,7 @@ const getLicenseValidityCategory = (expiryDateStr) => {
 
 // GET /api/drivers - List drivers with search and filtering
 router.get('/', authenticateJWT, async (req, res, next) => {
-  const { status, category, validity, search } = req.query;
+  const { status, category, validity, search, sort, order } = req.query;
 
   try {
     let queryText = 'SELECT * FROM drivers WHERE 1=1';
@@ -46,12 +46,15 @@ router.get('/', authenticateJWT, async (req, res, next) => {
     }
 
     if (search) {
-      queryText += ` AND (name ILIKE $${paramIndex} OR license_number ILIKE $${paramIndex})`;
+      queryText += ` AND (name ILIKE $${paramIndex} OR license_number ILIKE $${paramIndex} OR contact_number ILIKE $${paramIndex})`;
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
 
-    queryText += ' ORDER BY id DESC';
+    const allowedSort = { id: 'id', name: 'name', license_number: 'license_number', license_category: 'license_category', safety_score: 'safety_score', status: 'status' };
+    const sortCol = allowedSort[sort] || 'id';
+    const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+    queryText += ` ORDER BY ${sortCol} ${sortOrder}`;
 
     const result = await query(queryText, queryParams);
     let drivers = result.rows.map(driver => ({

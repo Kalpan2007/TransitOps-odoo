@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, AlertCircle, CheckCircle, Zap, Check, Play } from 'lucide-react';
+import { Plus, X, AlertCircle, CheckCircle, Zap, Check, Play, Search } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const Modal = ({ title, onClose, children, wide = false }) => (
   <div style={{
@@ -558,10 +560,20 @@ const Trips = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [vehicleFilter, setVehicleFilter] = useState('');
+  const [driverFilter, setDriverFilter] = useState('');
   const [showWizard, setShowWizard] = useState(false);
   const [completingTrip, setCompletingTrip] = useState(null);
 
   const canDispatch = ['DISPATCHER', 'FLEET_MANAGER', 'ADMIN'].includes(userRole);
+
+  const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(trips, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  useEffect(() => { setSearchQuery(search); }, [search]);
+  useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
+  useEffect(() => { setFilter('vehicle_reg', vehicleFilter); }, [vehicleFilter, setFilter]);
+  useEffect(() => { setFilter('driver_name', driverFilter); }, [driverFilter, setFilter]);
 
   const load = async () => {
     setLoading(true);
@@ -627,10 +639,27 @@ const Trips = ({ userRole }) => {
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '200px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
+          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search trip code, origin, dest, vehicle, driver…"
+            style={{ paddingLeft: '32px' }}
+          />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '180px' }}>
           <option value="">All Statuses</option>
           {['DRAFT', 'DISPATCHED', 'COMPLETED', 'CANCELLED'].map(s => <option key={s} value={s}>{s === 'DISPATCHED' ? 'ACTIVE (DISPATCHED)' : s}</option>)}
+        </select>
+        <select value={vehicleFilter} onChange={e => setVehicleFilter(e.target.value)} style={{ width: '160px' }}>
+          <option value="">All Vehicles</option>
+          {vehicles.map(v => <option key={v.id} value={v.registration_number}>{v.registration_number}</option>)}
+        </select>
+        <select value={driverFilter} onChange={e => setDriverFilter(e.target.value)} style={{ width: '160px' }}>
+          <option value="">All Drivers</option>
+          {drivers.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
         </select>
         <div style={{ flex: 1 }} />
         {canDispatch && (
@@ -646,23 +675,23 @@ const Trips = ({ userRole }) => {
         <table>
           <thead>
             <tr>
-              <th>Trip Code</th>
-              <th>Origin (Source)</th>
-              <th>Destination</th>
-              <th>Cargo Weight</th>
-              <th>Planned Distance</th>
+              <SortHeader label="Trip Code" sortKey="trip_code" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Origin (Source)" sortKey="source" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Destination" sortKey="destination" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Cargo Weight" sortKey="cargo_weight" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Planned Distance" sortKey="planned_distance" sortConfig={sortConfig} onSort={requestSort} />
               <th>Vehicle</th>
               <th>Driver</th>
-              <th>Status</th>
+              <SortHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
               {canDispatch && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {loading && <tr><td colSpan={canDispatch ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-            {!loading && trips.length === 0 && (
+            {!loading && sortedItems.length === 0 && (
               <tr><td colSpan={canDispatch ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No trips found.</td></tr>
             )}
-            {trips.map(t => (
+            {sortedItems.map(t => (
               <tr key={t.id}>
                 <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{t.trip_code}</td>
                 <td>{t.source}</td>

@@ -6,10 +6,33 @@ const { sendWelcomeEmail } = require('../utils/email');
 
 const router = express.Router();
 
-// GET /api/users - List users (FLEET_MANAGER only)
+// GET /api/users - List users with search, filter, sort (FLEET_MANAGER only)
 router.get('/', authenticateJWT, authorizeRoles('FLEET_MANAGER'), async (req, res, next) => {
+  const { search, role, sort, order } = req.query;
+
+  let queryText = 'SELECT id, name, email, role, status, driver_id, created_at FROM users WHERE 1=1';
+  const queryParams = [];
+  let idx = 1;
+
+  if (search) {
+    queryText += ` AND (name ILIKE $${idx} OR email ILIKE $${idx})`;
+    queryParams.push(`%${search}%`);
+    idx++;
+  }
+
+  if (role) {
+    queryText += ` AND role = $${idx}`;
+    queryParams.push(role);
+    idx++;
+  }
+
+  const allowedSort = { id: 'id', name: 'name', email: 'email', role: 'role', created_at: 'created_at' };
+  const sortCol = allowedSort[sort] || 'id';
+  const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+  queryText += ` ORDER BY ${sortCol} ${sortOrder}`;
+
   try {
-    const result = await query('SELECT id, name, email, role, status, driver_id, created_at FROM users ORDER BY id DESC');
+    const result = await query(queryText, queryParams);
     res.json(result.rows);
   } catch (error) {
     next(error);

@@ -24,7 +24,7 @@ const getDynamicFuelPrice = async (clientOrPool) => {
 
 // GET /api/trips - List trips with status filtering
 router.get('/', authenticateJWT, async (req, res, next) => {
-  const { status, vehicle_id, driver_id } = req.query;
+  const { status, vehicle_id, driver_id, search, sort, order } = req.query;
 
   try {
     let queryText = `
@@ -38,6 +38,12 @@ router.get('/', authenticateJWT, async (req, res, next) => {
     `;
     const queryParams = [];
     let idx = 1;
+
+    if (search) {
+      queryText += ` AND (t.trip_code ILIKE $${idx} OR t.source ILIKE $${idx} OR t.destination ILIKE $${idx} OR v.registration_number ILIKE $${idx} OR d.name ILIKE $${idx})`;
+      queryParams.push(`%${search}%`);
+      idx++;
+    }
 
     if (status) {
       queryText += ` AND t.status = $${idx}`;
@@ -57,7 +63,10 @@ router.get('/', authenticateJWT, async (req, res, next) => {
       idx++;
     }
 
-    queryText += ' ORDER BY t.id DESC';
+    const allowedSort = { id: 't.id', trip_code: 't.trip_code', cargo_weight: 't.cargo_weight', planned_distance: 't.planned_distance', status: 't.status', source: 't.source', destination: 't.destination', created_at: 't.created_at' };
+    const sortCol = allowedSort[sort] || 't.id';
+    const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+    queryText += ` ORDER BY ${sortCol} ${sortOrder}`;
 
     const result = await query(queryText, queryParams);
     res.json(result.rows);

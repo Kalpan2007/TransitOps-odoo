@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Check } from 'lucide-react';
+import { Plus, X, Check, Search } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const Modal = ({ title, onClose, children }) => (
   <div style={{
@@ -49,6 +51,16 @@ const Maintenance = ({ userRole }) => {
   const [completing, setCompleting] = useState(null);
 
   const canManage = ['FLEET_MANAGER', 'DISPATCHER', 'ADMIN'].includes(userRole);
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [vehicleFilter, setVehicleFilter] = useState('');
+
+  const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(records, { defaultSortKey: 'start_date', defaultOrder: 'DESC' });
+
+  useEffect(() => { setSearchQuery(search); }, [search]);
+  useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
+  useEffect(() => { setFilter('vehicle_id', vehicleFilter); }, [vehicleFilter, setFilter]);
 
   const [form, setForm] = useState({
     vehicle_id: '',
@@ -166,7 +178,25 @@ const Maintenance = ({ userRole }) => {
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
+          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search vehicle, type, description…"
+            style={{ paddingLeft: '32px' }}
+          />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '160px' }}>
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active (In Shop)</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
+        <select value={vehicleFilter} onChange={e => setVehicleFilter(e.target.value)} style={{ width: '180px' }}>
+          <option value="">All Vehicles</option>
+          {vehicles.map(v => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
+        </select>
         {canManage && (
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             <Plus size={14} /> Log Maintenance
@@ -180,23 +210,23 @@ const Maintenance = ({ userRole }) => {
         <table>
           <thead>
             <tr>
-              <th>Work Order</th>
+              <SortHeader label="Work Order" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
               <th>Vehicle</th>
-              <th>Type</th>
+              <SortHeader label="Type" sortKey="maintenance_type" sortConfig={sortConfig} onSort={requestSort} />
               <th>Description</th>
-              <th>Cost (₹)</th>
-              <th>Start Date</th>
+              <SortHeader label="Cost (₹)" sortKey="maintenance_cost" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Start Date" sortKey="start_date" sortConfig={sortConfig} onSort={requestSort} />
               <th>End Date</th>
-              <th>Status</th>
+              <SortHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
               {canManage && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {loading && <tr><td colSpan={canManage ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-            {!loading && records.length === 0 && (
+            {!loading && sortedItems.length === 0 && (
               <tr><td colSpan={canManage ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No maintenance records found.</td></tr>
             )}
-            {records.map(r => {
+            {sortedItems.map(r => {
               const isOpen = r.status === 'ACTIVE';
               return (
                 <tr key={r.id}>

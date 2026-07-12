@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, X, Edit2, ShieldAlert, ShieldOff, Shield, Check } from 'lucide-react';
+import { Plus, Search, X, Edit2, ShieldAlert, ShieldOff, Check } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const licenseClass = (status) => {
   const m = { VALID: 'available', EXPIRING_SOON: 'inshop', EXPIRED: 'suspended' };
@@ -135,6 +137,8 @@ const Drivers = ({ userRole }) => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [licenseFilter, setLicenseFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -147,6 +151,12 @@ const Drivers = ({ userRole }) => {
   const canEditDetails = isFleetManager || isSafetyOfficer;
   const canScoreOrSuspend = isSafetyOfficer || isFleetManager;
   const isReadOnly = !isFleetManager && !isSafetyOfficer;
+
+  const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(drivers, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  useEffect(() => { setSearchQuery(search); }, [search]);
+  useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
+  useEffect(() => { setFilter('license_category', categoryFilter); }, [categoryFilter, setFilter]);
 
   const load = async () => {
     setLoading(true);
@@ -164,12 +174,7 @@ const Drivers = ({ userRole }) => {
 
   useEffect(() => { load(); }, [licenseFilter]);
 
-  const filtered = drivers.filter(d =>
-    !search ||
-    d.name?.toLowerCase().includes(search.toLowerCase()) ||
-    d.license_number?.toLowerCase().includes(search.toLowerCase()) ||
-    d.contact_number?.includes(search)
-  );
+  const CATEGORY_OPTIONS = ['Heavy Commercial', 'Light Commercial', 'Medium Commercial'];
 
   const handleSuspend = async (d) => {
     try {
@@ -258,7 +263,7 @@ const Drivers = ({ userRole }) => {
       )}
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
           <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
@@ -268,11 +273,22 @@ const Drivers = ({ userRole }) => {
             style={{ paddingLeft: '32px' }}
           />
         </div>
-         <select value={licenseFilter} onChange={e => setLicenseFilter(e.target.value)} style={{ width: '200px' }}>
+         <select value={licenseFilter} onChange={e => setLicenseFilter(e.target.value)} style={{ width: '180px' }}>
           <option value="">All License Statuses</option>
           <option value="VALID">Valid</option>
           <option value="EXPIRING_SOON">Expiring Soon</option>
           <option value="EXPIRED">Expired</option>
+        </select>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '150px' }}>
+          <option value="">All Statuses</option>
+          <option value="AVAILABLE">Available</option>
+          <option value="ON_TRIP">On Trip</option>
+          <option value="OFF_DUTY">Off Duty</option>
+          <option value="SUSPENDED">Suspended</option>
+        </select>
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ width: '180px' }}>
+          <option value="">All Categories</option>
+          {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         {canAddOrDelete && (
           <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
@@ -309,22 +325,22 @@ const Drivers = ({ userRole }) => {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>License #</th>
-                  <th>Category</th>
+                  <SortHeader label="Name" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="License #" sortKey="license_number" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Category" sortKey="license_category" sortConfig={sortConfig} onSort={requestSort} />
                   <th>Expiry</th>
                   <th>License Status</th>
-                  <th>Safety Score</th>
-                  <th>Status</th>
+                  <SortHeader label="Safety Score" sortKey="safety_score" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                   {canEditDetails && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading && <tr><td colSpan={canEditDetails ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-                {!loading && filtered.length === 0 && (
+                {!loading && sortedItems.length === 0 && (
                   <tr><td colSpan={canEditDetails ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No drivers found.</td></tr>
                 )}
-                {filtered.map(d => (
+                {sortedItems.map(d => (
                   <tr key={d.id} onClick={() => setSelected(d)} style={{ cursor: 'pointer' }}>
                     <td style={{ fontWeight: '500' }}>{d.name}</td>
                     <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{d.license_number}</td>

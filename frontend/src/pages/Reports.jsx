@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, RefreshCw, Fuel, DollarSign, BarChart3, Navigation } from 'lucide-react';
+import { RefreshCw, Fuel, DollarSign, BarChart3, Navigation } from 'lucide-react';
 import { api } from '../api';
 
 const MetricCard = ({ label, value, sub, color = 'var(--accent-color)' }) => (
@@ -51,6 +51,7 @@ const Reports = () => {
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [reportTab, setReportTab] = useState('roi');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'DESC' });
 
   const load = async () => {
     setLoading(true);
@@ -69,6 +70,33 @@ const Reports = () => {
   };
 
   useEffect(() => { load(); }, []);
+
+  const requestSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'ASC' ? 'DESC' : 'ASC',
+    }));
+  };
+
+  const sortData = (items) => {
+    if (!sortConfig.key || !items) return items || [];
+    return [...items].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      if (aVal == null) aVal = '';
+      if (bVal == null) bVal = '';
+      const aNum = Number(aVal);
+      const bNum = Number(bVal);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return sortConfig.direction === 'ASC' ? aNum - bNum : bNum - aNum;
+      }
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      if (aStr < bStr) return sortConfig.direction === 'ASC' ? -1 : 1;
+      if (aStr > bStr) return sortConfig.direction === 'ASC' ? 1 : -1;
+      return 0;
+    });
+  };
 
   const TABS = [
     ['roi', 'Vehicle ROI'],
@@ -173,17 +201,17 @@ const Reports = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Vehicle</th>
-                      <th>Acquisition Cost</th>
-                      <th>Revenue</th>
-                      <th>Op. Cost</th>
-                      <th>Net Profit</th>
-                      <th>ROI %</th>
+                      <th onClick={() => requestSort('registrationNumber')} style={{ cursor: 'pointer' }}>Vehicle {sortConfig.key === 'registrationNumber' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('acquisitionCost')} style={{ cursor: 'pointer' }}>Acquisition Cost {sortConfig.key === 'acquisitionCost' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('revenue')} style={{ cursor: 'pointer' }}>Revenue {sortConfig.key === 'revenue' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('operationalCost')} style={{ cursor: 'pointer' }}>Op. Cost {sortConfig.key === 'operationalCost' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('netProfit')} style={{ cursor: 'pointer' }}>Net Profit {sortConfig.key === 'netProfit' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('roiPercentage')} style={{ cursor: 'pointer' }}>ROI % {sortConfig.key === 'roiPercentage' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {vehicleROI.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No data.</td></tr>}
-                    {vehicleROI.sort((a, b) => b.revenue - a.revenue).map((v, i) => (
+                    {sortData(vehicleROI).map((v, i) => (
                       <tr key={i}>
                         <td>
                           <div style={{ fontWeight: '500', fontFamily: 'monospace', fontSize: '12px' }}>{v.registrationNumber}</div>
@@ -228,14 +256,14 @@ const Reports = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Vehicle</th>
-                      <th>Total Distance (km)</th>
-                      <th>Total Fuel (L)</th>
-                      <th>Efficiency (km/L)</th>
+                      <th onClick={() => requestSort('registrationNumber')} style={{ cursor: 'pointer' }}>Vehicle {sortConfig.key === 'registrationNumber' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('totalDistanceKm')} style={{ cursor: 'pointer' }}>Total Distance (km) {sortConfig.key === 'totalDistanceKm' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('totalFuelLiters')} style={{ cursor: 'pointer' }}>Total Fuel (L) {sortConfig.key === 'totalFuelLiters' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('efficiencyKmL')} style={{ cursor: 'pointer' }}>Efficiency (km/L) {sortConfig.key === 'efficiencyKmL' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {fuelEfficiency.sort((a, b) => b.efficiencyKmL - a.efficiencyKmL).map((v, i) => (
+                    {sortData(fuelEfficiency).map((v, i) => (
                       <tr key={i}>
                         <td>
                           <div style={{ fontWeight: '500', fontFamily: 'monospace', fontSize: '12px' }}>{v.registrationNumber}</div>
@@ -280,14 +308,14 @@ const Reports = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Vehicle</th>
-                      <th>Fuel Cost</th>
-                      <th>Maintenance Cost</th>
-                      <th>Total Operational Cost</th>
+                      <th onClick={() => requestSort('registrationNumber')} style={{ cursor: 'pointer' }}>Vehicle {sortConfig.key === 'registrationNumber' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('fuelCost')} style={{ cursor: 'pointer' }}>Fuel Cost {sortConfig.key === 'fuelCost' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('maintenanceCost')} style={{ cursor: 'pointer' }}>Maintenance Cost {sortConfig.key === 'maintenanceCost' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('totalOperationalCost')} style={{ cursor: 'pointer' }}>Total Operational Cost {sortConfig.key === 'totalOperationalCost' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {operationalCost.sort((a, b) => b.totalOperationalCost - a.totalOperationalCost).map((v, i) => (
+                    {sortData(operationalCost).map((v, i) => (
                       <tr key={i}>
                         <td>
                           <div style={{ fontWeight: '500', fontFamily: 'monospace', fontSize: '12px' }}>{v.registrationNumber}</div>
@@ -320,14 +348,14 @@ const Reports = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Vehicle</th>
-                      <th>Name</th>
-                      <th>Trip Count</th>
+                      <th onClick={() => requestSort('registrationNumber')} style={{ cursor: 'pointer' }}>Vehicle {sortConfig.key === 'registrationNumber' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>Name {sortConfig.key === 'name' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
+                      <th onClick={() => requestSort('tripCount')} style={{ cursor: 'pointer' }}>Trip Count {sortConfig.key === 'tripCount' ? (sortConfig.direction === 'ASC' ? '↑' : '↓') : ''}</th>
                       <th>Activity</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {tripCounts.sort((a, b) => b.tripCount - a.tripCount).map((v, i) => (
+                    {sortData(tripCounts).map((v, i) => (
                       <tr key={i}>
                         <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: '500' }}>{v.registrationNumber}</td>
                         <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{v.name}</td>

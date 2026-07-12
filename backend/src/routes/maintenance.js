@@ -5,15 +5,44 @@ const { sendMaintenanceStartedEmail, sendMaintenanceCompletedEmail } = require('
 
 const router = express.Router();
 
-// GET /api/maintenance - List maintenance records
+// GET /api/maintenance - List maintenance records with search, filter, sort
 router.get('/', authenticateJWT, async (req, res, next) => {
+  const { search, status, vehicle_id, sort, order } = req.query;
+
+  let queryText = `
+    SELECT m.*, v.registration_number as vehicle_reg, v.name as vehicle_name
+    FROM maintenance_logs m
+    LEFT JOIN vehicles v ON m.vehicle_id = v.id
+    WHERE 1=1
+  `;
+  const queryParams = [];
+  let idx = 1;
+
+  if (search) {
+    queryText += ` AND (v.registration_number ILIKE $${idx} OR v.name ILIKE $${idx} OR m.maintenance_type ILIKE $${idx} OR m.description ILIKE $${idx})`;
+    queryParams.push(`%${search}%`);
+    idx++;
+  }
+
+  if (status) {
+    queryText += ` AND m.status = $${idx}`;
+    queryParams.push(status);
+    idx++;
+  }
+
+  if (vehicle_id) {
+    queryText += ` AND m.vehicle_id = $${idx}`;
+    queryParams.push(vehicle_id);
+    idx++;
+  }
+
+  const allowedSort = { id: 'm.id', start_date: 'm.start_date', maintenance_cost: 'm.maintenance_cost', status: 'm.status' };
+  const sortCol = allowedSort[sort] || 'm.id';
+  const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+  queryText += ` ORDER BY ${sortCol} ${sortOrder}`;
+
   try {
-    const result = await query(`
-      SELECT m.*, v.registration_number as vehicle_reg, v.name as vehicle_name
-      FROM maintenance_logs m
-      LEFT JOIN vehicles v ON m.vehicle_id = v.id
-      ORDER BY m.id DESC
-    `);
+    const result = await query(queryText, queryParams);
     res.json(result.rows);
   } catch (error) {
     next(error);

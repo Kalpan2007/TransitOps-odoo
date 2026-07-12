@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Truck, MapPin, CheckCircle, X, AlertTriangle, RefreshCw, Navigation, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Truck, MapPin, CheckCircle, X, AlertTriangle, RefreshCw, Navigation, Check, Search } from 'lucide-react';
 import { api } from '../api';
 
 const STATUS_COLORS = {
@@ -175,6 +175,8 @@ const DriverPortal = ({ user }) => {
   const [error, setError] = useState('');
   const [completingTrip, setCompletingTrip] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [sortConfig] = useState({ key: 'id', direction: 'DESC' });
 
   const load = async () => {
     setLoading(true); setError('');
@@ -187,7 +189,35 @@ const DriverPortal = ({ user }) => {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = statusFilter ? trips.filter(t => t.status === statusFilter) : trips;
+  const filteredTrips = useMemo(() => {
+    let result = trips;
+    if (statusFilter) result = result.filter(t => t.status === statusFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(t =>
+        t.trip_code?.toLowerCase().includes(q) ||
+        t.source?.toLowerCase().includes(q) ||
+        t.destination?.toLowerCase().includes(q) ||
+        t.vehicle_reg?.toLowerCase().includes(q)
+      );
+    }
+    if (sortConfig.key) {
+      result = [...result].sort((a, b) => {
+        let aVal = a[sortConfig.key] ?? '';
+        let bVal = b[sortConfig.key] ?? '';
+        const aNum = Number(aVal);
+        const bNum = Number(bVal);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return sortConfig.direction === 'ASC' ? aNum - bNum : bNum - aNum;
+        }
+        return sortConfig.direction === 'ASC'
+          ? String(aVal).localeCompare(String(bVal))
+          : String(bVal).localeCompare(String(aVal));
+      });
+    }
+    return result;
+  }, [trips, statusFilter, search, sortConfig]);
+
   const activeTrips = trips.filter(t => t.status === 'DISPATCHED').length;
   const completedTrips = trips.filter(t => t.status === 'COMPLETED').length;
 
@@ -225,9 +255,9 @@ const DriverPortal = ({ user }) => {
         </div>
       </div>
 
-      {/* Filter + Refresh */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      {/* Filter + Search + Refresh */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {['', 'DISPATCHED', 'COMPLETED', 'DRAFT', 'CANCELLED'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)} style={{
               padding: '6px 14px', borderRadius: '20px', fontSize: '12px', border: '1px solid',
@@ -238,9 +268,20 @@ const DriverPortal = ({ user }) => {
             }}>{s || 'All'}</button>
           ))}
         </div>
-        <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'none', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', fontFamily: 'var(--font-family)' }}>
-          <RefreshCw size={13} /> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search trips…"
+              style={{ paddingLeft: '32px', width: '200px' }}
+            />
+          </div>
+          <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: 'none', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '12px', fontFamily: 'var(--font-family)' }}>
+            <RefreshCw size={13} /> Refresh
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -249,7 +290,7 @@ const DriverPortal = ({ user }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: '8px', padding: '16px 20px', color: 'var(--error-text)', fontSize: '14px' }}>
           <AlertTriangle size={18} />{error}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : filteredTrips.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', border: '1px dashed var(--border-color)', borderRadius: '10px', color: 'var(--text-muted)' }}>
           <Navigation size={32} style={{ marginBottom: '12px', opacity: 0.3 }} />
           <div style={{ fontSize: '15px', fontWeight: '500', marginBottom: '6px' }}>No trips found</div>
@@ -257,7 +298,7 @@ const DriverPortal = ({ user }) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filtered.map(trip => <TripCard key={trip.id} trip={trip} onComplete={setCompletingTrip} />)}
+          {filteredTrips.map(trip => <TripCard key={trip.id} trip={trip} onComplete={setCompletingTrip} />)}
         </div>
       )}
 

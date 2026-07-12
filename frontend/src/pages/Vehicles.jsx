@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, X, Edit2, AlertCircle } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const STATUS_OPTIONS = ['AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED'];
 const TYPE_OPTIONS = ['Truck', 'Van', 'Flatbed', 'Refrigerated', 'Tanker', 'Box_Truck'];
@@ -132,11 +134,20 @@ const Vehicles = ({ userRole }) => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
 
   const canManage = userRole === 'FLEET_MANAGER' || userRole === 'ADMIN';
+
+  const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(vehicles, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  useEffect(() => { setSearchQuery(search); }, [search]);
+  useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
+  useEffect(() => { setFilter('type', typeFilter); }, [typeFilter, setFilter]);
+  useEffect(() => { setFilter('region', regionFilter); }, [regionFilter, setFilter]);
 
   const load = async () => {
     setLoading(true);
@@ -154,11 +165,7 @@ const Vehicles = ({ userRole }) => {
 
   useEffect(() => { load(); }, [statusFilter]);
 
-  const filtered = vehicles.filter(v =>
-    !search || v.registration_number?.toLowerCase().includes(search.toLowerCase()) ||
-    v.name?.toLowerCase().includes(search.toLowerCase()) ||
-    v.model?.toLowerCase().includes(search.toLowerCase())
-  );
+  const REGION_OPTIONS = ['West', 'East', 'North', 'South'];
 
   const handleCreate = async (data) => {
     await api.createVehicle(data);
@@ -198,7 +205,7 @@ const Vehicles = ({ userRole }) => {
       )}
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
           <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
@@ -208,9 +215,17 @@ const Vehicles = ({ userRole }) => {
             style={{ paddingLeft: '32px' }}
           />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '160px' }}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: '150px' }}>
           <option value="">All Statuses</option>
           {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ width: '140px' }}>
+          <option value="">All Types</option>
+          {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+        </select>
+        <select value={regionFilter} onChange={e => setRegionFilter(e.target.value)} style={{ width: '130px' }}>
+          <option value="">All Regions</option>
+          {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
         {canManage && (
           <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
@@ -239,22 +254,22 @@ const Vehicles = ({ userRole }) => {
             <table>
               <thead>
                 <tr>
-                  <th>Reg Number</th>
-                  <th>Name</th>
-                  <th>Model</th>
-                  <th>Type</th>
-                  <th>Capacity</th>
-                  <th>Odometer</th>
-                  <th>Status</th>
+                  <SortHeader label="Reg Number" sortKey="registration_number" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Name" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Model" sortKey="model" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Type" sortKey="type" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Capacity" sortKey="maximum_load_capacity" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Odometer" sortKey="current_odometer" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} />
                   {canManage && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading && <tr><td colSpan={canManage ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-                {!loading && filtered.length === 0 && (
+                {!loading && sortedItems.length === 0 && (
                   <tr><td colSpan={canManage ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No vehicles found.</td></tr>
                 )}
-                {filtered.map(v => (
+                {sortedItems.map(v => (
                   <tr
                     key={v.id}
                     onClick={() => setSelected(v)}

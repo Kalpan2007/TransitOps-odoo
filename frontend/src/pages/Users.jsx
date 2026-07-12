@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Trash2 } from 'lucide-react';
+import { Plus, X, Trash2, Search } from 'lucide-react';
 import { api } from '../api';
+import useSortableData from '../hooks/useSortableData';
+import SortHeader from '../components/SortHeader';
 
 const ROLES = ['FLEET_MANAGER', 'DISPATCHER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST', 'ADMIN'];
 
@@ -44,6 +46,14 @@ const Users = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
+
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+
+  const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(users, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  useEffect(() => { setSearchQuery(search); }, [search]);
+  useEffect(() => { setFilter('role', roleFilter); }, [roleFilter, setFilter]);
 
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'DISPATCHER', driver_id: '' });
   const [formError, setFormError] = useState('');
@@ -141,7 +151,21 @@ const Users = () => {
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: '320px' }}>
+          <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search name, email…"
+            style={{ paddingLeft: '32px' }}
+          />
+        </div>
+        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ width: '180px' }}>
+          <option value="">All Roles</option>
+          {ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+        </select>
+        <div style={{ flex: 1 }} />
         <button className="btn btn-primary" onClick={openCreate}>
           <Plus size={14} /> Create User
         </button>
@@ -153,20 +177,20 @@ const Users = () => {
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Created</th>
+              <SortHeader label="#" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Name" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Email" sortKey="email" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Role" sortKey="role" sortConfig={sortConfig} onSort={requestSort} />
+              <SortHeader label="Created" sortKey="created_at" sortConfig={sortConfig} onSort={requestSort} />
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</td></tr>}
-            {!loading && users.length === 0 && (
+            {!loading && sortedItems.length === 0 && (
               <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No users found.</td></tr>
             )}
-              {users.map(u => {
+              {sortedItems.map(u => {
                 const linkedDriver = drivers.find(d => d.id === u.driver_id);
                 return (
                   <tr key={u.id}>
