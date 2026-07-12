@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, X, Edit2, ShieldAlert, ShieldOff, Check } from 'lucide-react';
+import { Plus, Search, X, Edit2, ShieldAlert, ShieldOff, Check, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const licenseClass = (status) => {
   const m = { VALID: 'available', EXPIRING_SOON: 'inshop', EXPIRED: 'suspended' };
@@ -153,6 +155,33 @@ const Drivers = ({ userRole }) => {
   const isReadOnly = !isFleetManager && !isSafetyOfficer;
 
   const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(drivers, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const DRIVER_COLUMNS = [
+    { key: 'name', label: 'Name' },
+    { key: 'license_number', label: 'License Number' },
+    { key: 'license_category', label: 'Category' },
+    { key: 'license_expiry_date', label: 'License Expiry' },
+    { key: 'license_validity', label: 'License Status' },
+    { key: 'safety_score', label: 'Safety Score' },
+    { key: 'status', label: 'Status' },
+  ];
+  const avgSafety = drivers.length > 0
+    ? Math.round(drivers.reduce((s, d) => s + (d.safety_score || 0), 0) / drivers.length)
+    : 0;
+  const { exportCsv, exportPdf } = useExport({
+    title: 'Driver Roster & Compliance Report',
+    columns: DRIVER_COLUMNS,
+    data: sortedItems,
+    filename: 'drivers',
+    subtitle: 'Driver license status, safety scores, and compliance overview',
+    summaryItems: [
+      { label: 'Total Drivers', value: drivers.length },
+      { label: 'Active', value: drivers.filter(d => d.status === 'AVAILABLE').length },
+      { label: 'Avg Safety Score', value: `${avgSafety}/100` },
+      { label: 'Suspended', value: suspendedCount },
+    ]
+  });
 
   useEffect(() => { setSearchQuery(search); }, [search]);
   useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
@@ -431,7 +460,10 @@ const Drivers = ({ userRole }) => {
                   <Edit2 size={12} /> Edit Driver Details
                 </button>
               )}
-              {canAddOrDelete && (
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
+        {canAddOrDelete && (
                 <button className="btn btn-danger" style={{ width: '100%' }} onClick={() => handleDelete(selected)}>
                   Delete Driver Profile
                 </button>
@@ -480,6 +512,15 @@ const Drivers = ({ userRole }) => {
           </div>
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title="Drivers"
+        rowCount={sortedItems.length}
+      />
     </div>
   );
 };

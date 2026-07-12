@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Trash2, Search } from 'lucide-react';
+import { Plus, X, Trash2, Search, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const ROLES = ['FLEET_MANAGER', 'DISPATCHER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST', 'ADMIN'];
 
@@ -51,6 +53,28 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState('');
 
   const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(users, { defaultSortKey: 'id', defaultOrder: 'DESC' });
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const USER_COLUMNS = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'role', label: 'Role' },
+    { key: 'created_at', label: 'Created' },
+  ];
+  const { exportCsv, exportPdf } = useExport({
+    title: 'System Users Directory',
+    columns: USER_COLUMNS,
+    data: sortedItems,
+    filename: 'users',
+    subtitle: 'User accounts, roles, and access management',
+    summaryItems: [
+      { label: 'Total Users', value: users.length },
+      { label: 'Admins', value: users.filter(u => u.role === 'ADMIN').length },
+      { label: 'Fleet Managers', value: users.filter(u => u.role === 'FLEET_MANAGER').length },
+      { label: 'Dispatchers', value: users.filter(u => u.role === 'DISPATCHER').length },
+    ]
+  });
 
   useEffect(() => { setSearchQuery(search); }, [search]);
   useEffect(() => { setFilter('role', roleFilter); }, [roleFilter, setFilter]);
@@ -166,6 +190,9 @@ const Users = () => {
           {ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
         </select>
         <div style={{ flex: 1 }} />
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
         <button className="btn btn-primary" onClick={openCreate}>
           <Plus size={14} /> Create User
         </button>
@@ -326,6 +353,15 @@ const Users = () => {
           </form>
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title="Users"
+        rowCount={sortedItems.length}
+      />
     </div>
   );
 };

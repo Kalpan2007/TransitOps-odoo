@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, X, Edit2, AlertCircle } from 'lucide-react';
+import { Plus, Search, X, Edit2, AlertCircle, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const STATUS_OPTIONS = ['AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED'];
 const TYPE_OPTIONS = ['Truck', 'Van', 'Flatbed', 'Refrigerated', 'Tanker', 'Box_Truck'];
@@ -144,6 +146,31 @@ const Vehicles = ({ userRole }) => {
 
   const { sortedItems, sortConfig, requestSort, setSearchQuery, setFilter } = useSortableData(vehicles, { defaultSortKey: 'id', defaultOrder: 'DESC' });
 
+  const [showExportModal, setShowExportModal] = useState(false);
+  const VEHICLE_COLUMNS = [
+    { key: 'registration_number', label: 'Registration Number' },
+    { key: 'name', label: 'Name' },
+    { key: 'model', label: 'Model' },
+    { key: 'type', label: 'Type' },
+    { key: 'maximum_load_capacity', label: 'Capacity (kg)' },
+    { key: 'current_odometer', label: 'Odometer' },
+    { key: 'status', label: 'Status' },
+    { key: 'region', label: 'Region' },
+  ];
+  const { exportCsv, exportPdf } = useExport({
+    title: 'Fleet Vehicle Registry',
+    columns: VEHICLE_COLUMNS,
+    data: sortedItems,
+    filename: 'vehicles',
+    subtitle: 'Complete fleet vehicle inventory and status report',
+    summaryItems: [
+      { label: 'Total Vehicles', value: vehicles.length },
+      { label: 'Available', value: vehicles.filter(v => v.status === 'AVAILABLE').length },
+      { label: 'On Trip', value: vehicles.filter(v => v.status === 'ON_TRIP').length },
+      { label: 'In Maintenance', value: vehicles.filter(v => v.status === 'IN_SHOP').length },
+    ]
+  });
+
   useEffect(() => { setSearchQuery(search); }, [search]);
   useEffect(() => { setFilter('status', statusFilter); }, [statusFilter, setFilter]);
   useEffect(() => { setFilter('type', typeFilter); }, [typeFilter, setFilter]);
@@ -227,6 +254,9 @@ const Vehicles = ({ userRole }) => {
           <option value="">All Regions</option>
           {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
+        <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+          <Download size={14} /> Export
+        </button>
         {canManage && (
           <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}>
             <Plus size={14} /> Add Vehicle
@@ -353,6 +383,15 @@ const Vehicles = ({ userRole }) => {
           />
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title="Vehicles"
+        rowCount={sortedItems.length}
+      />
     </div>
   );
 };

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Search } from 'lucide-react';
+import { Plus, X, Search, Download } from 'lucide-react';
 import { api } from '../api';
 import useSortableData from '../hooks/useSortableData';
 import SortHeader from '../components/SortHeader';
+import ExportModal from '../components/ExportModal';
+import useExport from '../hooks/useExport';
 
 const Modal = ({ title, onClose, children }) => (
   <div style={{
@@ -115,8 +117,54 @@ const Expenses = ({ userRole }) => {
     return true;
   });
 
-  const totalFuelCost = fuelLogs.reduce((s, f) => s + Number(f.fuel_cost || 0), 0);
-  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  // Export config (must be after filteredFuel/filteredExpenses are defined)
+  const [showExportModal, setShowExportModal] = useState(false);
+  const FUEL_COLUMNS = [
+    { key: 'id', label: 'Log Code' },
+    { key: 'vehicle_reg', label: 'Vehicle' },
+    { key: 'fuel_quantity_liters', label: 'Quantity (L)' },
+    { key: 'fuel_cost', label: 'Cost' },
+    { key: 'odometer_reading', label: 'Odometer' },
+    { key: 'fuel_date', label: 'Date' },
+  ];
+  const EXPENSE_COLUMNS = [
+    { key: 'id', label: 'Expense Code' },
+    { key: 'vehicle_reg', label: 'Vehicle' },
+    { key: 'expense_type', label: 'Type' },
+    { key: 'description', label: 'Description' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'expense_date', label: 'Date' },
+  ];
+  const activeColumns = tab === 'fuel' ? FUEL_COLUMNS : EXPENSE_COLUMNS;
+  const activeData = tab === 'fuel' ? filteredFuel : filteredExpenses;
+
+  // Compute totals for summary
+  const totalFuelCost = filteredFuel.reduce((s, f) => s + Number(f.fuel_cost || 0), 0);
+  const totalExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const totalLiters = filteredFuel.reduce((s, f) => s + Number(f.fuel_quantity_liters || 0), 0);
+
+  const { exportCsv, exportPdf } = useExport({
+    title: tab === 'fuel' ? 'Fuel Transaction Logs' : 'Operational Expense Report',
+    columns: activeColumns,
+    data: activeData,
+    filename: tab === 'fuel' ? 'fuel_logs' : 'operational_expenses',
+    subtitle: tab === 'fuel'
+      ? 'Vehicle fuel refill records with quantity, cost, and odometer readings'
+      : 'Operational expenses by category with vehicle linkage',
+    summaryItems: tab === 'fuel'
+      ? [
+          { label: 'Total Records', value: filteredFuel.length },
+          { label: 'Total Fuel Cost', value: `\u20B9${totalFuelCost.toLocaleString('en-IN')}` },
+          { label: 'Total Liters', value: `${totalLiters.toFixed(1)}L` },
+          { label: 'Avg Cost/Liter', value: totalLiters > 0 ? `\u20B9${(totalFuelCost / totalLiters).toFixed(1)}` : '\u20B90' },
+        ]
+      : [
+          { label: 'Total Records', value: filteredExpenses.length },
+          { label: 'Total Expenses', value: `\u20B9${totalExpenses.toLocaleString('en-IN')}` },
+          { label: 'Expense Types', value: [...new Set(filteredExpenses.map(e => e.expense_type))].length },
+          { label: 'Vehicles Involved', value: [...new Set(filteredExpenses.map(e => e.vehicle_reg).filter(Boolean))].length },
+        ]
+  });
 
   const handleFuelSubmit = async (e) => {
     e.preventDefault();
@@ -212,7 +260,10 @@ const Expenses = ({ userRole }) => {
           </button>
         ))}
         {canManage && (
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingRight: '4px' }}>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingRight: '4px', gap: '8px' }}>
+            <button className="btn btn-secondary" onClick={() => setShowExportModal(true)}>
+              <Download size={14} /> Export
+            </button>
             <button className="btn btn-primary" onClick={() => { setShowModal(true); setFormError(''); }}>
               <Plus size={14} /> Add {tab === 'fuel' ? 'Fuel Log' : 'Expense'}
             </button>
@@ -437,6 +488,15 @@ const Expenses = ({ userRole }) => {
           )}
         </Modal>
       )}
+
+      <ExportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onCsv={exportCsv}
+        onPdf={exportPdf}
+        title={tab === 'fuel' ? 'Fuel Logs' : 'Operational Expenses'}
+        rowCount={activeData.length}
+      />
     </div>
   );
 };
