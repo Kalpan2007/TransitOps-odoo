@@ -12,13 +12,13 @@ const STATUS_COLORS = {
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
       backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)',
       borderRadius: '8px', width: '520px', maxHeight: '90vh', overflowY: 'auto',
-      boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+      boxShadow: '0 20px 60px var(--overlay)'
     }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -40,9 +40,9 @@ const TripCard = ({ trip, onComplete }) => {
   return (
     <div style={{
       backgroundColor: 'var(--bg-card)',
-      border: `1px solid ${isDispatched ? 'rgba(43,108,176,0.4)' : 'var(--border-color)'}`,
+      border: `1px solid ${isDispatched ? 'var(--info-border-strong)' : 'var(--border-color)'}`,
       borderRadius: '8px', padding: '20px', transition: 'all 0.2s',
-      boxShadow: isDispatched ? '0 0 0 2px rgba(43,108,176,0.1)' : 'none',
+      boxShadow: isDispatched ? '0 0 0 2px var(--info-shadow)' : 'none',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
         <div>
@@ -85,13 +85,13 @@ const TripCard = ({ trip, onComplete }) => {
           onClick={() => onComplete(trip)}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '9px 18px', backgroundColor: '#2F855A', color: '#fff',
+            padding: '9px 18px', backgroundColor: 'var(--btn-success)', color: '#fff',
             border: 'none', borderRadius: '6px', cursor: 'pointer',
             fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-family)',
             transition: 'background 0.2s', width: '100%', justifyContent: 'center'
           }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#276749'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2F855A'}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--btn-success-hover)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--btn-success)'}
         >
           <CheckCircle size={15} /> Submit Trip Completion
         </button>
@@ -124,15 +124,15 @@ const CompleteModal = ({ trip, onClose, onSuccess }) => {
   };
 
   const inputStyle = {
-    width: '100%', padding: '9px 12px', backgroundColor: 'var(--bg-dark)',
+    width: '100%', padding: '9px 12px', backgroundColor: 'var(--bg-main)',
     border: '1px solid var(--border-color)', borderRadius: '6px',
     color: 'var(--text-main)', fontSize: '13px', fontFamily: 'var(--font-family)', boxSizing: 'border-box'
   };
 
   return (
     <Modal title={`Complete Trip: ${trip.trip_code}`} onClose={onClose}>
-      <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(43,108,176,0.08)', borderRadius: '6px', border: '1px solid rgba(43,108,176,0.2)' }}>
-        <div style={{ fontSize: '11px', color: '#63B3ED', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase' }}>TRIP DETAILS</div>
+      <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--info-bg-soft)', borderRadius: '6px', border: '1px solid var(--info-border-soft)' }}>
+        <div style={{ fontSize: '11px', color: 'var(--info-text)', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase' }}>TRIP DETAILS</div>
         <div style={{ fontSize: '13px', color: 'var(--text-main)' }}>{trip.source} → {trip.destination} · {trip.planned_distance} km planned</div>
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Vehicle: {trip.vehicle_name} ({trip.vehicle_reg})</div>
       </div>
@@ -148,12 +148,12 @@ const CompleteModal = ({ trip, onClose, onSuccess }) => {
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Total liters used during this trip</div>
         </div>
         {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(155,44,44,0.1)', border: '1px solid rgba(155,44,44,0.3)', borderRadius: '6px', padding: '10px 14px', marginBottom: '16px', color: '#FC8181', fontSize: '13px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: '6px', padding: '10px 14px', marginBottom: '16px', color: 'var(--error-text)', fontSize: '13px' }}>
             <AlertTriangle size={14} />{error}
           </div>
         )}
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button type="submit" disabled={loading} style={{ flex: 1, padding: '10px', backgroundColor: '#2F855A', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-family)', opacity: loading ? 0.7 : 1 }}>
+          <button type="submit" disabled={loading} style={{ flex: 1, padding: '10px', backgroundColor: 'var(--btn-success)', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-family)', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Submitting...' : (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 <Check size={14} /> Mark Trip Completed
@@ -195,12 +195,12 @@ const DriverPortal = ({ user }) => {
     <div>
       {/* Welcome Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(43,108,176,0.12) 0%, rgba(113,75,103,0.08) 100%)',
-        border: '1px solid rgba(43,108,176,0.25)', borderRadius: '10px',
+        background: 'linear-gradient(135deg, var(--info-bg-strong) 0%, var(--primary-bg) 100%)',
+        border: '1px solid var(--info-border)', borderRadius: '10px',
         padding: '20px 24px', marginBottom: '24px',
         display: 'flex', alignItems: 'center', gap: '16px'
       }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'rgba(43,108,176,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: 'var(--info-bg-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Truck size={24} color="#63B3ED" />
         </div>
         <div style={{ flex: 1 }}>
@@ -246,7 +246,7 @@ const DriverPortal = ({ user }) => {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}><RefreshCw size={24} style={{ marginBottom: '12px', opacity: 0.5 }} /><div>Loading your trips…</div></div>
       ) : error ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'rgba(155,44,44,0.1)', border: '1px solid rgba(155,44,44,0.3)', borderRadius: '8px', padding: '16px 20px', color: '#FC8181', fontSize: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: '8px', padding: '16px 20px', color: 'var(--error-text)', fontSize: '14px' }}>
           <AlertTriangle size={18} />{error}
         </div>
       ) : filtered.length === 0 ? (

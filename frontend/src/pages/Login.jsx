@@ -3,12 +3,12 @@ import { Truck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api';
 
 const TEST_ACCOUNTS = [
-  { name: 'kalp', email: 'kalp@transitops.com', role: 'Fleet Manager', color: '#714B67' },
-  { name: 'kalpan', email: 'kalpan@transitops.com', role: 'Dispatcher', color: '#2B6CB0' },
-  { name: 'rajan', email: 'rajan@transitops.com', role: 'Driver', color: '#319795' },
-  { name: 'aray', email: 'aray@transitops.com', role: 'Safety Officer', color: '#2F855A' },
-  { name: 'dax', email: 'dax@transitops.com', role: 'Financial Analyst', color: '#B7791F' },
-  { name: 'admin', email: 'admin@transitops.com', role: 'Admin', color: '#E53E3E' },
+  { name: 'kalp', email: 'kalp@transitops.com', role: 'Fleet Manager', color: 'var(--role-fleet)' },
+  { name: 'kalpan', email: 'kalpan@transitops.com', role: 'Dispatcher', color: 'var(--role-dispatcher)' },
+  { name: 'rajan', email: 'rajan@transitops.com', role: 'Driver', color: 'var(--role-driver)' },
+  { name: 'aray', email: 'aray@transitops.com', role: 'Safety Officer', color: 'var(--role-safety)' },
+  { name: 'dax', email: 'dax@transitops.com', role: 'Financial Analyst', color: 'var(--role-finance)' },
+  { name: 'admin', email: 'admin@transitops.com', role: 'Admin', color: 'var(--role-admin)' },
 ];
 
 const Login = ({ onLogin }) => {
@@ -42,7 +42,7 @@ const Login = ({ onLogin }) => {
     <div style={{
       display: 'flex',
       minHeight: '100vh',
-      backgroundColor: 'var(--bg-dark)',
+      backgroundColor: 'var(--bg-main)',
     }}>
       {/* Left: Login Form Panel */}
       <div style={{
@@ -134,12 +134,12 @@ const Login = ({ onLogin }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              backgroundColor: 'rgba(155,44,44,0.1)',
-              border: '1px solid rgba(155,44,44,0.3)',
+              backgroundColor: 'var(--error-bg)',
+              border: '1px solid var(--error-border)',
               borderRadius: '2px',
               padding: '10px 14px',
               marginBottom: '20px',
-              color: '#F56565',
+              color: 'var(--error-text)',
               fontSize: '13px'
             }}>
               <AlertCircle size={14} />
@@ -224,8 +224,8 @@ const Login = ({ onLogin }) => {
         </div>
 
         <div style={{
-          backgroundColor: 'rgba(197,139,50,0.08)',
-          border: '1px solid rgba(197,139,50,0.2)',
+          backgroundColor: 'var(--accent-bg)',
+          border: '1px solid var(--accent-border)',
           borderRadius: '2px',
           padding: '14px 16px'
         }}>

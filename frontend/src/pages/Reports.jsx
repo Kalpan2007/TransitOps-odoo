@@ -30,7 +30,7 @@ const HBarChart = ({ data, valueKey, labelKey, color = 'var(--primary-color)', f
           }}>
             {d[labelKey]}
           </div>
-          <div style={{ flex: 1, height: '20px', backgroundColor: 'var(--bg-dark)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, height: '20px', backgroundColor: 'var(--bg-main)', borderRadius: '2px', overflow: 'hidden' }}>
             <div style={{
               width: `${(Number(d[valueKey] || 0) / max) * 100}%`, height: '100%',
               backgroundColor: color, borderRadius: '2px', minWidth: 2, transition: 'width 0.4s'
@@ -128,15 +128,15 @@ const Reports = () => {
       {/* Overview KPI Strip */}
       <div className="grid grid-cols-4" style={{ marginBottom: '16px' }}>
         <MetricCard label="Total Revenue" value={fmt$(totalRevenue)} color="var(--accent-color)" sub="All completed trips" />
-        <MetricCard label="Operational Costs" value={fmt$(totalOpCost)} color="#F56565" sub="Fuel + maintenance" />
+        <MetricCard label="Operational Costs" value={fmt$(totalOpCost)} color="var(--error-text)" sub="Fuel + maintenance" />
         <MetricCard label="Net Profit / Loss" value={fmt$(totalNetProfit)}
-          color={totalNetProfit >= 0 ? '#48BB78' : '#F56565'} sub="Revenue minus costs" />
+          color={totalNetProfit >= 0 ? 'var(--success-text)' : 'var(--error-text)'} sub="Revenue minus costs" />
         <MetricCard label="Total Trips" value={totalTrips} color="var(--primary-color)" sub="All time" />
       </div>
       <div className="grid grid-cols-3" style={{ marginBottom: '20px' }}>
         <MetricCard label="Total Distance" value={`${totalDistance.toLocaleString()} km`} color="var(--text-main)" />
-        <MetricCard label="Total Fuel Used" value={`${totalFuelLiters.toFixed(0)} L`} color="#ED8936" />
-        <MetricCard label="Avg Efficiency" value={totalFuelLiters > 0 ? `${(totalDistance / totalFuelLiters).toFixed(2)} km/L` : '—'} color="#A0AEC0" />
+        <MetricCard label="Total Fuel Used" value={`${totalFuelLiters.toFixed(0)} L`} color="var(--warning-text)" />
+        <MetricCard label="Avg Efficiency" value={totalFuelLiters > 0 ? `${(totalDistance / totalFuelLiters).toFixed(2)} km/L` : '—'} color="var(--neutral-color)" />
       </div>
 
       {/* Tab Bar */}
@@ -155,7 +155,7 @@ const Reports = () => {
       </div>
 
       {loading && <div style={{ color: 'var(--text-muted)', padding: '32px', textAlign: 'center' }}>Loading analytics…</div>}
-      {error && <div style={{ color: '#F56565', padding: '16px' }}>Error: {error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', padding: '16px' }}>Error: {error}</div>}
 
       {data && !loading && (
         <>
@@ -191,15 +191,15 @@ const Reports = () => {
                         </td>
                         <td style={{ fontSize: '12px' }}>{fmt$(v.acquisitionCost)}</td>
                         <td style={{ color: 'var(--accent-color)', fontWeight: '500' }}>{fmt$(v.revenue)}</td>
-                        <td style={{ color: '#F56565', fontSize: '12px' }}>{fmt$(v.operationalCost)}</td>
-                        <td style={{ fontWeight: '600', color: Number(v.netProfit) >= 0 ? '#48BB78' : '#F56565' }}>
+                        <td style={{ color: 'var(--error-text)', fontSize: '12px' }}>{fmt$(v.operationalCost)}</td>
+                        <td style={{ fontWeight: '600', color: Number(v.netProfit) >= 0 ? 'var(--success-text)' : 'var(--error-text)' }}>
                           {fmt$(v.netProfit)}
                         </td>
                         <td>
                           <span style={{
                             padding: '3px 8px', borderRadius: '2px', fontSize: '12px', fontWeight: '600',
-                            backgroundColor: Number(v.roiPercentage) >= 0 ? 'rgba(47,133,90,0.15)' : 'rgba(155,44,44,0.15)',
-                            color: Number(v.roiPercentage) >= 0 ? '#48BB78' : '#F56565'
+                            backgroundColor: Number(v.roiPercentage) >= 0 ? 'var(--success-bg)' : 'var(--error-bg)',
+                            color: Number(v.roiPercentage) >= 0 ? 'var(--success-text)' : 'var(--error-text)'
                           }}>
                             {Number(v.roiPercentage || 0).toFixed(2)}%
                           </span>
@@ -222,7 +222,7 @@ const Reports = () => {
                 <HBarChart
                   data={fuelEfficiency.filter(v => v.efficiencyKmL > 0)}
                   labelKey="registrationNumber" valueKey="efficiencyKmL"
-                  color="#2B6CB0" formatter={v => `${Number(v||0).toFixed(2)} km/L`} />
+                  color="var(--info-color)" formatter={v => `${Number(v||0).toFixed(2)} km/L`} />
               </div>
               <div className="table-container">
                 <table>
@@ -248,7 +248,7 @@ const Reports = () => {
                             <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '2px' }}>
                               <div style={{
                                 width: `${Math.min((Number(v.efficiencyKmL || 0) / 15) * 100, 100)}%`,
-                                height: '100%', backgroundColor: '#2B6CB0', borderRadius: '2px'
+                                height: '100%', backgroundColor: 'var(--info-color)', borderRadius: '2px'
                               }} />
                             </div>
                             <span style={{ fontWeight: '600', fontSize: '12px', minWidth: '50px' }}>
@@ -274,7 +274,7 @@ const Reports = () => {
                 <HBarChart
                   data={operationalCost.filter(v => v.totalOperationalCost > 0)}
                   labelKey="registrationNumber" valueKey="totalOperationalCost"
-                  color="#F56565" formatter={v => `₹${Number(v||0).toLocaleString('en-IN')}`} />
+                  color="var(--error-text)" formatter={v => `₹${Number(v||0).toLocaleString('en-IN')}`} />
               </div>
               <div className="table-container">
                 <table>
@@ -293,9 +293,9 @@ const Reports = () => {
                           <div style={{ fontWeight: '500', fontFamily: 'monospace', fontSize: '12px' }}>{v.registrationNumber}</div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{v.name}</div>
                         </td>
-                        <td style={{ color: '#ED8936' }}>{fmt$(v.fuelCost)}</td>
-                        <td style={{ color: '#A0AEC0' }}>{fmt$(v.maintenanceCost)}</td>
-                        <td style={{ fontWeight: '600', color: '#F56565' }}>{fmt$(v.totalOperationalCost)}</td>
+                        <td style={{ color: 'var(--warning-text)' }}>{fmt$(v.fuelCost)}</td>
+                        <td style={{ color: 'var(--neutral-color)' }}>{fmt$(v.maintenanceCost)}</td>
+                        <td style={{ fontWeight: '600', color: 'var(--error-text)' }}>{fmt$(v.totalOperationalCost)}</td>
                       </tr>
                     ))}
                   </tbody>

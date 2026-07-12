@@ -10,7 +10,7 @@ const licenseClass = (status) => {
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -99,7 +99,7 @@ const DriverForm = ({ initial = {}, onSave, onClose }) => {
           <input type="number" value={form.safety_score} onChange={e => set('safety_score', Number(e.target.value))} min={0} max={100} />
         </div>
       </div>
-      {error && <div style={{ color: '#F56565', fontSize: '13px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
         <button type="submit" className="btn btn-primary" disabled={loading}>
@@ -111,7 +111,7 @@ const DriverForm = ({ initial = {}, onSave, onClose }) => {
 };
 
 const SafetyScoreBar = ({ score }) => {
-  const color = score >= 80 ? '#2F855A' : score >= 60 ? '#B7791F' : '#9B2C2C';
+  const color = score >= 80 ? 'var(--success-color)' : score >= 60 ? 'var(--warning-color)' : 'var(--error-color)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{
@@ -216,8 +216,8 @@ const Drivers = ({ userRole }) => {
       {isReadOnly && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '12px 16px', backgroundColor: 'rgba(197,139,50,0.08)',
-          border: '1px solid rgba(197,139,50,0.2)', borderRadius: '2px',
+          padding: '12px 16px', backgroundColor: 'var(--accent-bg)',
+          border: '1px solid var(--accent-border)', borderRadius: '2px',
           color: 'var(--accent-color)', fontSize: '13px', marginBottom: '16px'
         }}>
           <ShieldAlert size={15} />
@@ -233,11 +233,11 @@ const Drivers = ({ userRole }) => {
           {expiredCount > 0 && (
             <div style={{
               flex: 1, padding: '12px 16px',
-              backgroundColor: 'rgba(155,44,44,0.12)', border: '1px solid rgba(155,44,44,0.3)',
+              backgroundColor: 'var(--error-bg-soft)', border: '1px solid var(--error-border)',
               borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '10px'
             }}>
-              <ShieldOff size={16} color="#F56565" />
-              <span style={{ color: '#F56565', fontSize: '13px', fontWeight: '500' }}>
+              <ShieldOff size={16} color="var(--error-text)" />
+              <span style={{ color: 'var(--error-text)', fontSize: '13px', fontWeight: '500' }}>
                 {expiredCount} driver{expiredCount > 1 ? 's' : ''} with EXPIRED license
               </span>
             </div>
@@ -245,11 +245,11 @@ const Drivers = ({ userRole }) => {
           {expiringCount > 0 && (
             <div style={{
               flex: 1, padding: '12px 16px',
-              backgroundColor: 'rgba(183,121,31,0.12)', border: '1px solid rgba(183,121,31,0.3)',
+              backgroundColor: 'var(--warning-bg)', border: '1px solid var(--warning-border)',
               borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '10px'
             }}>
-              <ShieldAlert size={16} color="#ED8936" />
-              <span style={{ color: '#ED8936', fontSize: '13px', fontWeight: '500' }}>
+              <ShieldAlert size={16} color="var(--warning-text)" />
+              <span style={{ color: 'var(--warning-text)', fontSize: '13px', fontWeight: '500' }}>
                 {expiringCount} driver{expiringCount > 1 ? 's' : ''} with license expiring soon
               </span>
             </div>
@@ -288,23 +288,23 @@ const Drivers = ({ userRole }) => {
           <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)' }}>{drivers.length}</div>
         </div>
         <div className="card" style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => setLicenseFilter('EXPIRED')}>
-          <div style={{ fontSize: '11px', color: '#F56565', textTransform: 'uppercase', marginBottom: '4px' }}>Expired License</div>
-          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#F56565' }}>{expiredCount}</div>
+          <div style={{ fontSize: '11px', color: 'var(--error-text)', textTransform: 'uppercase', marginBottom: '4px' }}>Expired License</div>
+          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--error-text)' }}>{expiredCount}</div>
         </div>
         <div className="card" style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => setLicenseFilter('EXPIRING_SOON')}>
-          <div style={{ fontSize: '11px', color: '#ED8936', textTransform: 'uppercase', marginBottom: '4px' }}>Expiring Soon</div>
-          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#ED8936' }}>{expiringCount}</div>
+          <div style={{ fontSize: '11px', color: 'var(--warning-text)', textTransform: 'uppercase', marginBottom: '4px' }}>Expiring Soon</div>
+          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--warning-text)' }}>{expiringCount}</div>
         </div>
         <div className="card" style={{ padding: '12px 14px' }}>
-          <div style={{ fontSize: '11px', color: '#F56565', textTransform: 'uppercase', marginBottom: '4px' }}>Suspended</div>
-          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#F56565' }}>{suspendedCount}</div>
+          <div style={{ fontSize: '11px', color: 'var(--error-text)', textTransform: 'uppercase', marginBottom: '4px' }}>Suspended</div>
+          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--error-text)' }}>{suspendedCount}</div>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: '16px' }}>
         {/* Driver Table */}
         <div style={{ flex: 1 }}>
-          {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+          {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
           <div className="table-container">
             <table>
               <thead>

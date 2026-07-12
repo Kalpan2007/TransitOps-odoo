@@ -21,10 +21,10 @@ const KpiCard = ({ title, value, unit = '', sub, color = 'var(--accent-color)', 
 const FleetStateBar = ({ dist }) => {
   if (!dist) return null;
   const segments = [
-    { key: 'available', label: 'Available', color: '#2F855A', count: dist.available || 0 },
-    { key: 'onTrip',    label: 'On Trip',   color: '#2B6CB0', count: dist.onTrip || 0 },
-    { key: 'inShop',    label: 'In Shop',   color: '#B7791F', count: dist.inShop || 0 },
-    { key: 'retired',   label: 'Retired',   color: '#4A5568', count: dist.retired || 0 },
+    { key: 'available', label: 'Available', color: 'var(--chart-success)', count: dist.available || 0 },
+    { key: 'onTrip',    label: 'On Trip',   color: 'var(--chart-info)', count: dist.onTrip || 0 },
+    { key: 'inShop',    label: 'In Shop',   color: 'var(--chart-warning)', count: dist.inShop || 0 },
+    { key: 'retired',   label: 'Retired',   color: 'var(--chart-neutral)', count: dist.retired || 0 },
   ];
   const total = segments.reduce((s, x) => s + x.count, 1);
   return (
@@ -148,7 +148,7 @@ const Dashboard = ({ userRole }) => {
 
       {/* Role-Aware Welcome & Insights Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(113,75,103,0.12) 0%, rgba(43,108,176,0.08) 100%)',
+        background: 'linear-gradient(135deg, var(--primary-bg-strong) 0%, var(--info-bg-soft) 100%)',
         border: '1px solid var(--border-color)',
         borderRadius: '2px',
         padding: '16px 20px',
@@ -159,7 +159,7 @@ const Dashboard = ({ userRole }) => {
       }}>
         <div style={{
           width: '38px', height: '38px', borderRadius: '2px',
-          backgroundColor: 'rgba(197,139,50,0.15)',
+          backgroundColor: 'var(--accent-bg-strong)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'var(--accent-color)'
         }}>
@@ -180,18 +180,18 @@ const Dashboard = ({ userRole }) => {
       </div>
 
       {error && (
-        <div style={{ padding: '12px 16px', backgroundColor: 'rgba(155,44,44,0.1)', border: '1px solid rgba(155,44,44,0.3)', borderRadius: '2px', color: '#F56565', marginBottom: '16px' }}>
+        <div style={{ padding: '12px 16px', backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: '2px', color: 'var(--error-text)', marginBottom: '16px' }}>
           Error loading dashboard data: {error}
         </div>
       )}
 
       {/* KPI Row 1 */}
       <div className="grid grid-cols-4" style={{ marginBottom: '0' }}>
-        <KpiCard title="Available Vehicles" value={kpis.availableVehicles ?? '—'} icon={Truck} color="#2F855A"
+        <KpiCard title="Available Vehicles" value={kpis.availableVehicles ?? '—'} icon={Truck} color="var(--success-color)"
           sub={`${kpis.activeVehicles ?? 0} on active trips`} />
-        <KpiCard title="Active Trips" value={kpis.activeTrips ?? '—'} icon={Navigation} color="#2B6CB0"
+        <KpiCard title="Active Trips" value={kpis.activeTrips ?? '—'} icon={Navigation} color="var(--info-color)"
           sub="Currently dispatched" />
-        <KpiCard title="Drivers on Duty" value={kpis.driversOnDuty ?? '—'} icon={Users} color="#714B67"
+        <KpiCard title="Drivers on Duty" value={kpis.driversOnDuty ?? '—'} icon={Users} color="var(--primary-color)"
           sub={`${driverAvailability.available ?? 0} available now`} />
         <KpiCard title="Fleet Utilization" value={kpis.fleetUtilization ?? '—'} unit="%" icon={TrendingUp} color="var(--accent-color)"
           sub="Vehicles actively deployed" />
@@ -199,13 +199,13 @@ const Dashboard = ({ userRole }) => {
 
       {/* KPI Row 2 */}
       <div className="grid grid-cols-4" style={{ marginTop: '16px', marginBottom: '0' }}>
-        <KpiCard title="Vehicles in Maintenance" value={kpis.vehiclesInMaintenance ?? '—'} icon={Wrench} color="#B7791F"
+        <KpiCard title="Vehicles in Maintenance" value={kpis.vehiclesInMaintenance ?? '—'} icon={Wrench} color="var(--warning-color)"
           sub="Currently in shop" />
-        <KpiCard title="Suspended Drivers" value={driverAvailability.suspended ?? '—'} icon={AlertTriangle} color="#F56565"
+        <KpiCard title="Suspended Drivers" value={driverAvailability.suspended ?? '—'} icon={AlertTriangle} color="var(--error-text)"
           sub="Review required" />
-        <KpiCard title="Pending Trips" value={kpis.pendingTrips ?? '—'} icon={CheckCircle} color="#48BB78"
+        <KpiCard title="Pending Trips" value={kpis.pendingTrips ?? '—'} icon={CheckCircle} color="var(--success-text)"
           sub="Draft — not yet dispatched" />
-        <KpiCard title="Off Duty Drivers" value={driverAvailability.offDuty ?? '—'} icon={Users} color="#A0AEC0"
+        <KpiCard title="Off Duty Drivers" value={driverAvailability.offDuty ?? '—'} icon={Users} color="var(--neutral-color)"
           sub="Currently unavailable" />
       </div>
 
@@ -216,7 +216,7 @@ const Dashboard = ({ userRole }) => {
           <h3 style={{ fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-title)', marginBottom: '16px' }}>Fleet State</h3>
           <FleetStateBar dist={fleetDistribution} />
           <div style={{ marginTop: '20px' }}>
-            <BarChart data={dayBars} label="Trip Volume (Last 7 Days)" color="#714B67" />
+            <BarChart data={dayBars} label="Trip Volume (Last 7 Days)" color="var(--chart-primary)" />
           </div>
         </div>
 
@@ -271,8 +271,8 @@ const Dashboard = ({ userRole }) => {
               {maintenanceAttention.map(m => (
                 <div key={m.id} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', backgroundColor: 'var(--bg-dark)',
-                  border: '1px solid rgba(183,121,31,0.25)', borderRadius: '2px'
+                  padding: '10px 12px', backgroundColor: 'var(--bg-main)',
+                  border: '1px solid var(--warning-border)', borderRadius: '2px'
                 }}>
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: '500' }}>{m.maintenance_type}</div>

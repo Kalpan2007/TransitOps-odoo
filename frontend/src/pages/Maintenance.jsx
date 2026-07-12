@@ -5,7 +5,7 @@ import { api } from '../api';
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -141,8 +141,8 @@ const Maintenance = ({ userRole }) => {
       {!canManage && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '12px 16px', backgroundColor: 'rgba(197,139,50,0.08)',
-          border: '1px solid rgba(197,139,50,0.2)', borderRadius: '2px',
+          padding: '12px 16px', backgroundColor: 'var(--accent-bg)',
+          border: '1px solid var(--accent-border)', borderRadius: '2px',
           color: 'var(--accent-color)', fontSize: '13px', marginBottom: '16px'
         }}>
           <strong>Read-Only View:</strong> Your role ({userRole?.replace(/_/g, ' ')}) has read-only access to maintenance logs.
@@ -156,12 +156,12 @@ const Maintenance = ({ userRole }) => {
           <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)' }}>{records.length}</div>
         </div>
         <div className="card" style={{ padding: '12px 14px' }}>
-          <div style={{ fontSize: '11px', color: '#ED8936', textTransform: 'uppercase', marginBottom: '4px' }}>Active (In Shop)</div>
-          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#ED8936' }}>{openCount}</div>
+          <div style={{ fontSize: '11px', color: 'var(--warning-text)', textTransform: 'uppercase', marginBottom: '4px' }}>Active (In Shop)</div>
+          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--warning-text)' }}>{openCount}</div>
         </div>
         <div className="card" style={{ padding: '12px 14px' }}>
-          <div style={{ fontSize: '11px', color: '#48BB78', textTransform: 'uppercase', marginBottom: '4px' }}>Completed</div>
-          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#48BB78' }}>{closedCount}</div>
+          <div style={{ fontSize: '11px', color: 'var(--success-text)', textTransform: 'uppercase', marginBottom: '4px' }}>Completed</div>
+          <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--success-text)' }}>{closedCount}</div>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ const Maintenance = ({ userRole }) => {
         )}
       </div>
 
-      {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
 
       <div className="table-container">
         <table>
@@ -269,7 +269,7 @@ const Maintenance = ({ userRole }) => {
               <label>Estimated Cost (₹)</label>
               <input type="number" value={form.maintenance_cost} onChange={e => set('maintenance_cost', e.target.value)} min={0} step={0.01} />
             </div>
-            {formError && <div style={{ color: '#F56565', fontSize: '13px' }}>{formError}</div>}
+            {formError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{formError}</div>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={formLoading}>
@@ -297,7 +297,7 @@ const Maintenance = ({ userRole }) => {
                 <input type="number" value={completeForm.maintenance_cost} onChange={e => setComp('maintenance_cost', e.target.value)} min={0} step={0.01} required />
               </div>
             </div>
-            {formError && <div style={{ color: '#F56565', fontSize: '13px' }}>{formError}</div>}
+            {formError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{formError}</div>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setCompleting(null)}>Cancel</button>
               <button type="submit" className="btn btn-accent" disabled={formLoading}>

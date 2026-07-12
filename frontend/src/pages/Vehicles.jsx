@@ -13,7 +13,7 @@ const statusClass = (s) => {
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -115,7 +115,7 @@ const VehicleForm = ({ initial = {}, onSave, onClose }) => {
           <input type="number" value={form.current_odometer} onChange={e => set('current_odometer', e.target.value)} min={0} />
         </div>
       </div>
-      {error && <div style={{ color: '#F56565', fontSize: '13px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
         <button type="submit" className="btn btn-primary" disabled={loading}>
@@ -188,8 +188,8 @@ const Vehicles = ({ userRole }) => {
       {!canManage && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '12px 16px', backgroundColor: 'rgba(197,139,50,0.08)',
-          border: '1px solid rgba(197,139,50,0.2)', borderRadius: '2px',
+          padding: '12px 16px', backgroundColor: 'var(--accent-bg)',
+          border: '1px solid var(--accent-border)', borderRadius: '2px',
           color: 'var(--accent-color)', fontSize: '13px', marginBottom: '16px'
         }}>
           <AlertCircle size={15} />
@@ -234,7 +234,7 @@ const Vehicles = ({ userRole }) => {
       <div style={{ display: 'flex', gap: '16px' }}>
         {/* Vehicle Table */}
         <div style={{ flex: 1 }}>
-          {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+          {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
           <div className="table-container">
             <table>
               <thead>

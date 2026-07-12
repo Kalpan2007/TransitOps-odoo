@@ -5,7 +5,7 @@ import { api } from '../api';
 const Modal = ({ title, onClose, children, wide = false }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -176,7 +176,7 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
               <div style={{
                 width: '28px', height: '28px', borderRadius: '2px',
                 backgroundColor: done ? 'var(--success-color)' : active ? 'var(--primary-color)' : 'var(--border-color)',
-                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--step-text)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '12px', fontWeight: '700'
               }}>
                 {done ? <Check size={14} /> : stepNum}
@@ -233,8 +233,8 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Smart Recommendations Panel */}
           <div style={{
-            backgroundColor: 'rgba(113,75,103,0.08)',
-            border: '1px solid rgba(113,75,103,0.2)',
+            backgroundColor: 'var(--primary-bg)',
+            border: '1px solid var(--primary-border)',
             borderRadius: '2px',
             padding: '14px 16px'
           }}>
@@ -246,7 +246,7 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
             </div>
 
             {recLoading && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Analyzing fleet...</div>}
-            {recError && <div style={{ color: '#F56565', fontSize: '13px' }}>{recError}</div>}
+            {recError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{recError}</div>}
 
             {recommendations && !recLoading && (() => {
               const match = getSelectedMatchDetails();
@@ -256,8 +256,8 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
                     <div
                       style={{
                         padding: '10px 12px', marginBottom: '6px',
-                        backgroundColor: 'var(--bg-dark)',
-                        border: match.isBest ? '1px solid rgba(197,139,50,0.4)' : '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-main)',
+                        border: match.isBest ? '1px solid var(--accent-border-strong)' : '1px solid var(--border-color)',
                         borderRadius: '2px'
                       }}
                     >
@@ -272,7 +272,7 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
                           </span>
                           <span style={{
                             marginLeft: '8px', fontSize: '10px',
-                            backgroundColor: match.isBest ? 'rgba(197,139,50,0.15)' : 'rgba(113,75,103,0.15)',
+                            backgroundColor: match.isBest ? 'var(--accent-bg-strong)' : 'var(--primary-bg-strong)',
                             color: match.isBest ? 'var(--accent-color)' : 'var(--text-main)',
                             padding: '2px 6px', borderRadius: '2px', fontWeight: '600'
                           }}>
@@ -323,8 +323,8 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
                       style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         padding: '10px 12px', marginBottom: '6px',
-                        backgroundColor: 'var(--bg-dark)',
-                        border: '1px solid rgba(197,139,50,0.4)',
+                        backgroundColor: 'var(--bg-main)',
+                        border: '1px solid var(--accent-border-strong)',
                         borderRadius: '2px', cursor: 'pointer'
                       }}
                       onClick={() => applyRecommendation(
@@ -342,14 +342,14 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
                         </span>
                         <span style={{
                           marginLeft: '8px', fontSize: '10px',
-                          backgroundColor: 'rgba(197,139,50,0.15)', color: 'var(--accent-color)',
+                          backgroundColor: 'var(--accent-bg-strong)', color: 'var(--accent-color)',
                           padding: '2px 6px', borderRadius: '2px'
                         }}>BEST MATCH</span>
                       </div>
                       <span style={{ fontSize: '11px', color: 'var(--accent-color)', fontWeight: '500' }}>Click to Apply</span>
                     </div>
                   ) : (
-                    <div style={{ color: '#F56565', fontSize: '13px' }}>
+                    <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>
                       No valid vehicle/driver combinations available for this weight.
                     </div>
                   )}
@@ -419,8 +419,8 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
           {validationError && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              backgroundColor: 'rgba(155,44,44,0.1)', border: '1px solid rgba(155,44,44,0.3)',
-              borderRadius: '2px', padding: '10px 14px', color: '#F56565', fontSize: '13px'
+              backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)',
+              borderRadius: '2px', padding: '10px 14px', color: 'var(--error-text)', fontSize: '13px'
             }}>
               <AlertCircle size={14} />
               {validationError}
@@ -444,13 +444,13 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
       {step === 3 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{
-            padding: '16px', backgroundColor: 'rgba(47,133,90,0.08)',
-            border: '1px solid rgba(47,133,90,0.25)', borderRadius: '2px',
+            padding: '16px', backgroundColor: 'var(--success-bg-soft)',
+            border: '1px solid var(--success-border-strong)', borderRadius: '2px',
             display: 'flex', alignItems: 'center', gap: '10px'
           }}>
-            <CheckCircle size={18} color="#48BB78" />
+            <CheckCircle size={18} color="var(--success-text)" />
             <div>
-              <div style={{ fontWeight: '600', fontSize: '14px', color: '#48BB78' }}>Trip #{tripId} created as DRAFT</div>
+              <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--success-text)' }}>Trip #{tripId} created as DRAFT</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 Click Dispatch to mark vehicle & driver as ON TRIP and activate it.
               </div>
@@ -473,8 +473,8 @@ const TripDispatchWizard = ({ vehicles, drivers, onSuccess, onClose }) => {
           {validationError && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px',
-              backgroundColor: 'rgba(155,44,44,0.1)', border: '1px solid rgba(155,44,44,0.3)',
-              borderRadius: '2px', padding: '10px 14px', color: '#F56565', fontSize: '13px'
+              backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)',
+              borderRadius: '2px', padding: '10px 14px', color: 'var(--error-text)', fontSize: '13px'
             }}>
               <AlertCircle size={14} />
               {validationError}
@@ -536,7 +536,7 @@ const CompleteTripModal = ({ trip, onSuccess, onClose }) => {
         <label>Fuel Consumed (liters) *</label>
         <input type="number" value={form.fuel_consumed} onChange={e => setForm(f => ({ ...f, fuel_consumed: e.target.value }))} required />
       </div>
-      {error && <div style={{ color: '#F56565', fontSize: '13px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{error}</div>}
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
         <button type="submit" className="btn btn-accent" disabled={loading}>
@@ -606,8 +606,8 @@ const Trips = ({ userRole }) => {
       {!canDispatch && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '12px 16px', backgroundColor: 'rgba(197,139,50,0.08)',
-          border: '1px solid rgba(197,139,50,0.2)', borderRadius: '2px',
+          padding: '12px 16px', backgroundColor: 'var(--accent-bg)',
+          border: '1px solid var(--accent-border)', borderRadius: '2px',
           color: 'var(--accent-color)', fontSize: '13px', marginBottom: '16px'
         }}>
           <AlertCircle size={15} />
@@ -640,7 +640,7 @@ const Trips = ({ userRole }) => {
         )}
       </div>
 
-      {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
 
       <div className="table-container">
         <table>

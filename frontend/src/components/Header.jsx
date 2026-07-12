@@ -1,22 +1,24 @@
 import React from 'react';
-import { Bell, LogOut, User } from 'lucide-react';
+import { Bell, LogOut, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const ROLE_DISPLAY = {
-  FLEET_MANAGER: { label: 'Fleet Manager', color: '#714B67' },
-  DISPATCHER: { label: 'Dispatcher', color: '#2B6CB0' },
-  DRIVER: { label: 'Driver', color: '#319795' },
-  SAFETY_OFFICER: { label: 'Safety Officer', color: '#2F855A' },
-  FINANCIAL_ANALYST: { label: 'Financial Analyst', color: '#B7791F' },
-  ADMIN: { label: 'Admin', color: '#E53E3E' },
+  FLEET_MANAGER: { label: 'Fleet Manager', color: 'var(--role-fleet)' },
+  DISPATCHER: { label: 'Dispatcher', color: 'var(--role-dispatcher)' },
+  DRIVER: { label: 'Driver', color: 'var(--role-driver)' },
+  SAFETY_OFFICER: { label: 'Safety Officer', color: 'var(--role-safety)' },
+  FINANCIAL_ANALYST: { label: 'Financial Analyst', color: 'var(--role-finance)' },
+  ADMIN: { label: 'Admin', color: 'var(--role-admin)' },
 };
 
 const Header = ({ user, currentPage, onLogout }) => {
+  const { theme, toggleTheme } = useTheme();
   const roleInfo = user ? ROLE_DISPLAY[user.role] : null;
 
   return (
     <header style={{
       height: '56px',
-      backgroundColor: 'var(--bg-card)',
+      backgroundColor: 'var(--bg-header)',
       borderBottom: '1px solid var(--border-color)',
       display: 'flex',
       alignItems: 'center',
@@ -26,7 +28,8 @@ const Header = ({ user, currentPage, onLogout }) => {
       top: 0,
       right: 0,
       left: 'var(--sidebar-width)',
-      zIndex: 9
+      zIndex: 9,
+      transition: 'background-color 0.25s ease, border-color 0.25s ease'
     }}>
       {/* Page Context */}
       <div>
@@ -42,7 +45,28 @@ const Header = ({ user, currentPage, onLogout }) => {
       </div>
 
       {/* Right Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          style={{
+            background: 'none',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--border-radius)',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            transition: 'all 0.2s'
+          }}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
         <button
           title="Notifications"
           style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
@@ -56,7 +80,7 @@ const Header = ({ user, currentPage, onLogout }) => {
             <div style={{
               width: '32px',
               height: '32px',
-              borderRadius: '2px',
+              borderRadius: 'var(--border-radius)',
               backgroundColor: roleInfo?.color || 'var(--primary-color)',
               display: 'flex',
               alignItems: 'center',

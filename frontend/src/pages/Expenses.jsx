@@ -5,7 +5,7 @@ import { api } from '../api';
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -173,7 +173,7 @@ const Expenses = ({ userRole }) => {
         )}
       </div>
 
-      {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
 
       {/* Fuel Logs Table */}
       {tab === 'fuel' && (
@@ -290,7 +290,7 @@ const Expenses = ({ userRole }) => {
                   <input type="number" value={fuelForm.fuel_cost} onChange={e => setFuelForm(f => ({ ...f, fuel_cost: e.target.value }))} min={0} step={0.01} required />
                 </div>
               </div>
-              {formError && <div style={{ color: '#F56565', fontSize: '13px' }}>{formError}</div>}
+              {formError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{formError}</div>}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={formLoading}>{formLoading ? 'Saving...' : 'Save Log'}</button>
@@ -334,7 +334,7 @@ const Expenses = ({ userRole }) => {
                 <label>Description</label>
                 <textarea value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} rows={2} />
               </div>
-              {formError && <div style={{ color: '#F56565', fontSize: '13px' }}>{formError}</div>}
+              {formError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{formError}</div>}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={formLoading}>{formLoading ? 'Saving...' : 'Save Expense'}</button>

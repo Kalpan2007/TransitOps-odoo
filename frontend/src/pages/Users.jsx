@@ -16,7 +16,7 @@ const ROLE_COLORS = {
 const Modal = ({ title, onClose, children }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 100,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center'
   }}>
     <div style={{
@@ -147,7 +147,7 @@ const Users = () => {
         </button>
       </div>
 
-      {error && <div style={{ color: '#F56565', marginBottom: '8px' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--error-text)', marginBottom: '8px' }}>{error}</div>}
 
       <div className="table-container">
         <table>
@@ -184,7 +184,7 @@ const Users = () => {
                         <div>
                           <div>{u.name}</div>
                           {linkedDriver && (
-                            <div style={{ fontSize: '10px', color: '#319795', fontWeight: '400', marginTop: '2px' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--role-driver)', fontWeight: '400', marginTop: '2px' }}>
                               Linked: {linkedDriver.name} ({linkedDriver.license_number})
                             </div>
                           )}
@@ -292,7 +292,7 @@ const Users = () => {
                 </span>
               </div>
             )}
-            {formError && <div style={{ color: '#F56565', fontSize: '13px' }}>{formError}</div>}
+            {formError && <div style={{ color: 'var(--error-text)', fontSize: '13px' }}>{formError}</div>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={formLoading}>

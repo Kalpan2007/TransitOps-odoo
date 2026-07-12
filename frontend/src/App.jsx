@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Login from './pages/Login';
@@ -70,7 +71,7 @@ function App() {
     return (
       <div style={{
         display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: 'var(--bg-dark)', color: 'var(--text-muted)', fontSize: '14px'
+        backgroundColor: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '14px'
       }}>
         Loading TransitOps…
       </div>
@@ -97,29 +98,31 @@ function App() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={user.role} />
+    <ThemeProvider>
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={user.role} />
 
-      <div style={{
-        marginLeft: 'var(--sidebar-width)',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh'
-      }}>
-        <Header user={user} currentPage={PAGE_LABELS[activeTab] || activeTab} onLogout={handleLogout} />
-
-        <main style={{
-          marginTop: '56px',
-          padding: '24px',
+        <div style={{
+          marginLeft: 'var(--sidebar-width)',
           flex: 1,
-          backgroundColor: 'var(--bg-dark)',
-          overflowY: 'auto'
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh'
         }}>
-          {renderPage()}
-        </main>
+          <Header user={user} currentPage={PAGE_LABELS[activeTab] || activeTab} onLogout={handleLogout} />
+
+          <main style={{
+            marginTop: '56px',
+            padding: '24px',
+            flex: 1,
+            backgroundColor: 'var(--bg-main)',
+            overflowY: 'auto'
+          }}>
+            {renderPage()}
+          </main>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
 
