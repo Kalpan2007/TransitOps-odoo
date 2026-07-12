@@ -1,328 +1,389 @@
-# TransitOps: Smart Transport Operations Platform (ERP)
+<p align="center">
+  <img src="https://img.shields.io/badge/TransitOps-v1.0.0-714B67?style=for-the-badge&labelColor=0E0E10&color=714B67" alt="TransitOps"/>
+  <img src="https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=0E0E10" alt="React"/>
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white&labelColor=0E0E10" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=0E0E10" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white&labelColor=0E0E10" alt="Express"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge&labelColor=0E0E10" alt="License"/>
+</p>
 
-TransitOps is a centralized, production-grade enterprise transport operations resource planning (ERP) platform designed for logistics organizations. It replaces spreadsheet-based and manual fleet management workflows with structured transactional pipelines, role-based access gates, strong backend data validations, and real-time operational dashboard analytics.
+<p align="center">
+  <strong>A centralized, production-grade ERP platform that digitizes vehicle, driver, dispatch, maintenance, and expense management for logistics operations.</strong>
+</p>
 
----
-
-## 📖 Table of Contents
-1. [Core Features](#-core-features)
-2. [Workflows & System Architecture](#-workflows--system-architecture)
-3. [Tech Stack](#-tech-stack)
-4. [Local Development Setup](#-local-development-setup)
-5. [Database Schema & Architecture](#-database-schema--architecture)
-6. [Smart Dispatch Recommendation Engine](#-smart-dispatch-recommendation-engine)
-7. [Cloud Deployment Guide (Production)](#-cloud-deployment-guide-production)
-8. [Repository File Structure](#-repository-file-structure)
-
----
-
-## 🌟 Core Features
-
-*   **Role-Based Access Control (RBAC):** Restricts endpoints and hides UI controls depending on JWT authenticated user roles:
-    *   *Fleet Manager:* Full vehicle registry lifecycle & maintenance scheduler access.
-    *   *Dispatcher:* Wizard-based trip creation, resource assignments, dispatching, and completion.
-    *   *Safety Officer:* Driver profile registry, license expiry monitoring, safety scoring, and driver suspension.
-    *   *Financial Analyst:* Fuel log bookkeeping, operational expenses tracking, and ROI analysis.
-*   **Real-time Operations Dashboard:** Displays dynamic fleet statistics (Active/Available vehicles, shop items, active trips) and a live operational activity log.
-*   **Transactional Trip Dispatch:** Uses PostgreSQL row-locking (`SELECT FOR UPDATE`) and database transactions (`BEGIN/COMMIT/ROLLBACK`) to enforce atomic dispatching and prevent race conditions or double-bookings of drivers and vehicles.
-*   **Maintenance Scheduler:** Tracks vehicle maintenance lifecycles, automatically transitioning vehicle statuses to `IN_SHOP` to exclude them from the dispatch pool.
-*   **Analytics & Exporter:** Compiles KPIs like Fuel Efficiency, Fleet Utilization, and Vehicle ROI, with full support for date-based filtering and CSV exporting.
+<p align="center">
+  <a href="#-features">Features</a> &bull;
+  <a href="#-tech-stack">Tech Stack</a> &bull;
+  <a href="#-local-development">Setup</a> &bull;
+  <a href="#-api-reference">API</a> &bull;
+  <a href="#-deployment">Deploy</a>
+</p>
 
 ---
 
-## 📊 Workflows & System Architecture
+## Overview
 
-### 1. System Request & Authorization Architecture
-This diagram outlines how user roles request resources through the secure authorization middleware and transaction controllers:
+Many logistics companies still rely on spreadsheets and manual logbooks, leading to scheduling conflicts, underutilized vehicles, missed maintenance, expired driver licenses, inaccurate expense tracking, and poor operational visibility.
 
-```mermaid
-graph TD
-    FM[Fleet Manager] -->|Manages Vehicles & Maintenance| API[REST API Gateways]
-    SO[Safety Officer] -->|Manages Drivers & Licensing| API
-    DP[Dispatcher] -->|Manages Trips & Dispatches| API
-    FA[Financial Analyst] -->|Manages Fuel & Expenses| API
+**TransitOps** replaces all of that with a single source of truth — a full-lifecycle transport operations platform with role-based access control, atomic dispatch transactions, automatic status transitions, and real-time analytics.
 
-    subgraph Backend Server (Express on Render)
-        API --> Auth[JWT Auth Middleware]
-        Auth --> Valid[Strong Business Rule Validations]
-        Valid --> TX[Atomic Database Transaction Lock]
-    end
+---
 
-    subgraph Database Cluster (Supabase Postgres)
-        TX --> DB[(PostgreSQL Database)]
-    end
+## Features
+
+### Authentication & RBAC
+- Secure JWT-based login with email and password
+- Four distinct roles with granular endpoint and UI gating:
+  - **Fleet Manager** — Vehicle registry, maintenance, user management, full admin access
+  - **Dispatcher** — Trip creation, dispatch, completion, cancellation with smart recommendations
+  - **Safety Officer** — Driver profiles, license monitoring, safety scoring, suspension
+  - **Financial Analyst** — Fuel logs, operational expenses, ROI analysis
+
+### Dashboard
+- KPI cards: Active Vehicles, Available Vehicles, Vehicles in Maintenance, Active Trips, Pending Trips, Drivers on Duty, Fleet Utilization %
+- Fleet state distribution chart
+- Active trips table with vehicle and driver details
+- Open maintenance work orders
+- Recent operational activity timeline
+- Filters by vehicle type, status, and region
+
+### Vehicle Registry
+- Full CRUD with unique registration number enforcement
+- Fields: Registration Number, Name/Model, Type, Max Load Capacity, Odometer, Acquisition Cost, Region, Status
+- Status lifecycle: Available → On Trip / In Shop → Retired
+- Detail panel with trip history, maintenance history, fuel logs, and expense records
+
+### Driver Management
+- Full CRUD with license number uniqueness
+- License validity tracking: Valid, Expiring Soon (≤30 days), Expired
+- Safety score tracking with visual indicator (0–100)
+- Suspend / Unsuspend workflow
+- Filters by status, category, validity, and search
+
+### Trip Management
+- 3-step dispatch wizard with smart resource recommendation engine
+- Trip lifecycle: Draft → Dispatched → Completed / Cancelled
+- Automatic vehicle and driver status transitions on dispatch, completion, and cancellation
+- Cargo weight validation against vehicle capacity
+- Final odometer and fuel consumption logging on completion
+
+### Maintenance
+- Work order creation auto-transitions vehicle status to In Shop
+- Completion restores vehicle to Available (or stays Retired)
+- Auto-books maintenance expense entry on completion
+- 11 maintenance types: Engine Overhaul, Brake Service, Tyre Rotation, Oil Change, and more
+
+### Fuel & Expense Management
+- Fuel log recording with liters, cost, date, and odometer reading
+- Operational expense tracking: Toll, Maintenance, Parking, Permit, Other
+- Grand total calculation across fuel and operational costs
+- Linked to vehicles and optionally to trips
+
+### Reports & Analytics
+- Four analytics tabs: Vehicle ROI, Fuel Efficiency, Operational Costs, Trip Counts
+- 7 overview KPIs: Total Revenue, Operational Costs, Net Profit/Loss, Total Trips, Total Distance, Total Fuel Used, Avg Efficiency
+- Date range filtering across all reports
+- CSV export for all four report types
+
+### Smart Dispatch Recommendation Engine
+When dispatching, the system ranks available vehicles and drivers:
+1. **Capacity Filter** — Eliminates vehicles where max capacity < cargo weight
+2. **Capacity Fit Score** — Prioritizes vehicles whose capacity is closest to the cargo weight
+3. **Fuel Efficiency Ranking** — Ranks by historical distance/fuel ratio
+4. **Driver Alignment** — Pairs with the available driver with the highest safety score
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite 8, Lucide React, Vanilla CSS |
+| Backend | Node.js, Express 4 |
+| Database | PostgreSQL (via `pg` driver) |
+| Auth | JWT (jsonwebtoken), bcryptjs |
+| Testing | Jest, Supertest |
+| Linting | oxlint |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Frontend (React)                   │
+│        Vite dev server on :3000 → proxy /api         │
+├─────────────────────────────────────────────────────┤
+│                  REST API (Express)                  │
+│   JWT Auth Middleware → RBAC Gate → Route Handler     │
+│   Atomic Transactions (SELECT FOR UPDATE)            │
+├─────────────────────────────────────────────────────┤
+│               PostgreSQL Database                    │
+│    7 tables · 12 indexes · Row-level locking         │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 2. Trip Dispatch & Lifecycle State Diagram
-Describes the strict state transitions and the automatic updates applied to vehicle/driver status at each step:
+### Database Schema
 
-```mermaid
-stateDiagram-v2
-    [*] --> DRAFT : Create Trip
-    
-    state "DRAFT" as DRAFT
-    state "DISPATCHED" as DISPATCHED
-    state "COMPLETED" as COMPLETED
-    state "CANCELLED" as CANCELLED
-
-    DRAFT --> DISPATCHED : Dispatch (Atomically Locks Driver & Vehicle to ON_TRIP)
-    DRAFT --> CANCELLED : Cancel (No status changes)
-
-    DISPATCHED --> COMPLETED : Complete (Update Odometer, Log Fuel, Restore Status to AVAILABLE)
-    DISPATCHED --> CANCELLED : Cancel (Restore Driver & Vehicle to AVAILABLE)
-
-    COMPLETED --> [*]
-    CANCELLED --> [*]
-```
-
-### 3. Vehicle Maintenance Lifecycle State Diagram
-Describes how work orders transition vehicles to `IN_SHOP` to exclude them from the dispatch pool, and how they return to `AVAILABLE` on completion:
-
-```mermaid
-stateDiagram-v2
-    [*] --> AVAILABLE
-    AVAILABLE --> IN_SHOP : Schedule Work Order (Auto transitions vehicle status)
-    IN_SHOP --> AVAILABLE : Complete Work Order (Vehicle status restored to AVAILABLE)
-    IN_SHOP --> RETIRED : Retire Vehicle (Vehicle taken permanently out of service)
-    RETIRED --> [*]
-```
+| Table | Purpose |
+|-------|---------|
+| `users` | System users with roles and status |
+| `vehicles` | Vehicle registry with status lifecycle |
+| `drivers` | Driver profiles with license and safety data |
+| `trips` | Trip records with dispatch lifecycle |
+| `maintenance_logs` | Work orders linked to vehicles |
+| `fuel_logs` | Fuel fill records linked to vehicles/trips |
+| `expenses` | Operational expenses (tolls, parking, etc.) |
 
 ---
 
-## 🛠️ Tech Stack
-
-*   **Frontend Client:** React 19, Vite, Lucide React (Icons), Vanilla CSS (Odoo ERP inspired aesthetic: `#234E3F` primary, charcoal backgrounds, dense tables, and sharp `2px` borders).
-*   **Backend Server:** Node.js, Express, pg (PostgreSQL driver), JSON Web Tokens (Authentication), BcryptJS (Password hashing).
-*   **Database:** PostgreSQL (Supabase cloud hosting).
-
----
-
-## 💻 Local Development Setup
+## Local Development
 
 ### Prerequisites
-*   Node.js (v18 or higher)
-*   PostgreSQL database instance
+- Node.js v18+
+- PostgreSQL instance
 
-### 1. Database Setup
-Create a PostgreSQL database and configure your connection string. 
+### 1. Clone and Install
 
-### 2. Backend Installation
-1. Navigate to the `backend/` directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the `backend/` folder:
-   ```env
-   PORT=5000
-   DATABASE_URL=postgresql://user:password@localhost:5432/transitops
-   JWT_SECRET=transitops_super_secret_token_key
-   NODE_ENV=development
-   ```
-4. Run the database schema creation and data seeder:
-   ```bash
-   npm run seed
-   ```
-5. Start the backend development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone https://github.com/your-org/TransitOps-odoo.git
+cd TransitOps-odoo
 
-### 3. Frontend Installation
-1. Navigate to the `frontend/` directory:
-   ```bash
-   cd ../frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server (proxies to port 5000):
-   ```bash
-   npm run dev
-   ```
-4. Open your browser and navigate to `http://localhost:3000`.
+# Backend
+cd backend
+npm install
+
+# Frontend
+cd ../frontend
+npm install
+```
+
+### 2. Configure Environment
+
+Create `backend/.env`:
+
+```env
+PORT=5000
+DATABASE_URL=postgresql://user:password@localhost:5432/transitops
+JWT_SECRET=your_secret_key_here
+NODE_ENV=development
+```
+
+### 3. Seed Database
+
+```bash
+cd backend
+npm run seed
+```
+
+This creates all tables, enums, indexes, and seeds 4 users, 4 vehicles, and 4 drivers.
+
+### 4. Start Development Servers
+
+```bash
+# Terminal 1 — Backend
+cd backend
+npm run dev
+
+# Terminal 2 — Frontend
+cd frontend
+npm run dev
+```
+
+Open **http://localhost:3000** in your browser.
+
+### Test Accounts
+
+| Email | Password | Role |
+|-------|----------|------|
+| alice@transitops.com | Password@123 | Fleet Manager |
+| bob@transitops.com | Password@123 | Dispatcher |
+| charlie@transitops.com | Password@123 | Safety Officer |
+| david@transitops.com | Password@123 | Financial Analyst |
 
 ---
 
-## 🗄️ Database Schema & Architecture
+## API Reference
 
-### Entity-Relationship Diagram (SQL DDL)
-```sql
--- 1. USERS & ROLES
-CREATE TYPE user_role AS ENUM ('FLEET_MANAGER', 'DISPATCHER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST');
-CREATE TYPE user_status AS ENUM ('ACTIVE', 'INACTIVE');
+All endpoints require `Authorization: Bearer <token>` except login.
 
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role user_role NOT NULL,
-    status user_status DEFAULT 'ACTIVE',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Authenticate and receive JWT |
+| GET | `/api/auth/me` | Get current user profile |
 
--- 2. VEHICLE REGISTRY
-CREATE TYPE vehicle_status AS ENUM ('AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED');
+### Vehicles
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/vehicles` | List vehicles (filters: type, status, region, search) | All |
+| GET | `/api/vehicles/:id` | Vehicle detail with computed metrics | All |
+| POST | `/api/vehicles` | Create vehicle | Fleet Manager |
+| PUT | `/api/vehicles/:id` | Update vehicle | Fleet Manager |
+| DELETE | `/api/vehicles/:id` | Delete vehicle | Fleet Manager |
 
-CREATE TABLE vehicles (
-    id SERIAL PRIMARY KEY,
-    registration_number VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    model VARCHAR(100) NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    maximum_load_capacity NUMERIC(10, 2) NOT NULL,
-    current_odometer NUMERIC(12, 2) NOT NULL DEFAULT 0.0,
-    acquisition_cost NUMERIC(12, 2) NOT NULL,
-    region VARCHAR(100) NOT NULL,
-    status vehicle_status DEFAULT 'AVAILABLE',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+### Drivers
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/drivers` | List drivers (filters: status, category, validity, search) | All |
+| GET | `/api/drivers/:id` | Driver detail with trip history | All |
+| POST | `/api/drivers` | Create driver | Safety Officer, Fleet Manager |
+| PUT | `/api/drivers/:id` | Update driver | Safety Officer, Fleet Manager |
+| PUT | `/api/drivers/:id/suspend` | Suspend driver | Safety Officer |
+| PUT | `/api/drivers/:id/unsuspend` | Unsuspend driver | Safety Officer |
+| PUT | `/api/drivers/:id/safety-score` | Update safety score | Safety Officer |
+| DELETE | `/api/drivers/:id` | Delete driver | Safety Officer, Fleet Manager |
 
--- 3. DRIVERS & SAFETY PROFILES
-CREATE TYPE driver_status AS ENUM ('AVAILABLE', 'ON_TRIP', 'OFF_DUTY', 'SUSPENDED');
+### Trips
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/trips` | List trips (filters: status, vehicle_id, driver_id) | All |
+| GET | `/api/trips/:id` | Trip detail with vehicle/driver info | All |
+| POST | `/api/trips` | Create draft trip | Dispatcher |
+| POST | `/api/trips/:id/dispatch` | Dispatch trip (atomic) | Dispatcher |
+| POST | `/api/trips/:id/complete` | Complete trip (atomic) | Dispatcher |
+| POST | `/api/trips/:id/cancel` | Cancel trip (atomic) | Dispatcher |
+| POST | `/api/trips/recommend-resources` | Smart dispatch recommendation | Dispatcher |
 
-CREATE TABLE drivers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    license_number VARCHAR(100) UNIQUE NOT NULL,
-    license_category VARCHAR(50) NOT NULL,
-    license_expiry_date DATE NOT NULL,
-    contact_number VARCHAR(50) NOT NULL,
-    safety_score INT DEFAULT 100 CHECK (safety_score BETWEEN 0 AND 100),
-    status driver_status DEFAULT 'AVAILABLE',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+### Maintenance
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/maintenance` | List maintenance records | All |
+| POST | `/api/maintenance` | Create work order (atomic) | Fleet Manager |
+| POST | `/api/maintenance/:id/complete` | Complete work order (atomic) | Fleet Manager |
 
--- 4. TRIPS
-CREATE TYPE trip_status AS ENUM ('DRAFT', 'DISPATCHED', 'COMPLETED', 'CANCELLED');
+### Expenses
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/expenses/fuel` | List fuel logs | All |
+| POST | `/api/expenses/fuel` | Create fuel log | Financial Analyst |
+| GET | `/api/expenses/operational` | List operational expenses | All |
+| POST | `/api/expenses/operational` | Create expense | Financial Analyst |
 
-CREATE TABLE trips (
-    id SERIAL PRIMARY KEY,
-    trip_code VARCHAR(50) UNIQUE NOT NULL,
-    source VARCHAR(255) NOT NULL,
-    destination VARCHAR(255) NOT NULL,
-    vehicle_id INT REFERENCES vehicles(id) ON DELETE RESTRICT,
-    driver_id INT REFERENCES drivers(id) ON DELETE RESTRICT,
-    cargo_weight NUMERIC(10, 2) NOT NULL,
-    planned_distance NUMERIC(10, 2) NOT NULL,
-    final_odometer NUMERIC(12, 2),
-    fuel_consumed NUMERIC(8, 2),
-    revenue NUMERIC(12, 2) DEFAULT 0.0,
-    status trip_status DEFAULT 'DRAFT',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    dispatched_at TIMESTAMP WITH TIME ZONE,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+### Dashboard & Reports
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/dashboard` | KPIs and activity feed | All |
+| GET | `/api/reports/analytics` | Analytics data (date range filter) | All |
+| GET | `/api/reports/export-csv` | CSV export (4 report types) | All |
 
--- 5. MAINTENANCE LOGS
-CREATE TYPE maintenance_status AS ENUM ('ACTIVE', 'COMPLETED');
+### Users
+| Method | Endpoint | Description | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/users` | List all users | Fleet Manager |
+| POST | `/api/users` | Create user | Fleet Manager |
+| PUT | `/api/users/:id` | Update user | Fleet Manager |
+| DELETE | `/api/users/:id` | Delete user | Fleet Manager |
 
-CREATE TABLE maintenance_logs (
-    id SERIAL PRIMARY KEY,
-    vehicle_id INT REFERENCES vehicles(id) ON DELETE CASCADE,
-    maintenance_type VARCHAR(100) NOT NULL,
-    description TEXT,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    maintenance_cost NUMERIC(12, 2) NOT NULL DEFAULT 0.0,
-    status maintenance_status DEFAULT 'ACTIVE',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+---
 
--- 6. FUEL LOGS
-CREATE TABLE fuel_logs (
-    id SERIAL PRIMARY KEY,
-    vehicle_id INT REFERENCES vehicles(id) ON DELETE CASCADE,
-    trip_id INT REFERENCES trips(id) ON DELETE SET NULL,
-    fuel_quantity_liters NUMERIC(8, 2) NOT NULL,
-    fuel_cost NUMERIC(12, 2) NOT NULL,
-    fuel_date DATE NOT NULL,
-    odometer_reading NUMERIC(12, 2) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+## Business Rules
 
--- 7. EXPENSES
-CREATE TYPE expense_type AS ENUM ('TOLL', 'MAINTENANCE', 'PARKING', 'PERMIT', 'OTHER');
+| Rule | Enforcement |
+|------|------------|
+| Vehicle registration number is unique | Database constraint + API validation |
+| Retired or In Shop vehicles never appear in dispatch | Status check before dispatch |
+| Expired license or Suspended driver cannot be assigned | 11-point validation before dispatch |
+| On Trip vehicle/driver cannot be double-booked | `SELECT FOR UPDATE` row locking |
+| Cargo weight must not exceed vehicle capacity | Hard check at dispatch time |
+| Dispatching auto-sets vehicle + driver to On Trip | Atomic transaction |
+| Completing a trip restores vehicle + driver to Available | Atomic transaction |
+| Cancelling a dispatched trip restores resources | Atomic transaction |
+| Creating maintenance auto-sets vehicle to In Shop | Atomic transaction |
+| Closing maintenance restores vehicle to Available | Atomic transaction (unless Retired) |
 
-CREATE TABLE expenses (
-    id SERIAL PRIMARY KEY,
-    vehicle_id INT REFERENCES vehicles(id) ON DELETE CASCADE,
-    trip_id INT REFERENCES trips(id) ON DELETE SET NULL,
-    expense_type expense_type NOT NULL,
-    description TEXT,
-    amount NUMERIC(12, 2) NOT NULL,
-    expense_date DATE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+---
 
--- Database Indexes for Optimization
-CREATE INDEX idx_vehicles_registration_number ON vehicles(registration_number);
-CREATE INDEX idx_vehicles_status ON vehicles(status);
-CREATE INDEX idx_drivers_status ON drivers(status);
-CREATE INDEX idx_trips_status ON trips(status);
-CREATE INDEX idx_maintenance_status ON maintenance_logs(status);
+## Project Structure
+
+```
+TransitOps-odoo/
+├── backend/
+│   ├── server.js                     # Entry point
+│   ├── src/
+│   │   ├── app.js                    # Express app setup
+│   │   ├── config/
+│   │   │   └── database.js           # PostgreSQL pool
+│   │   ├── middleware/
+│   │   │   ├── auth.js               # JWT + RBAC middleware
+│   │   │   └── errorHandler.js       # Global error handler
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   ├── users.js
+│   │   │   ├── vehicles.js
+│   │   │   ├── drivers.js
+│   │   │   ├── trips.js
+│   │   │   ├── maintenance.js
+│   │   │   ├── expenses.js
+│   │   │   ├── reports.js
+│   │   │   └── dashboard.js
+│   │   └── utils/
+│   │       └── seed.js               # Schema + seed data
+│   └── tests/
+│       └── integration.test.js       # E2E integration tests
+├── frontend/
+│   ├── index.html
+│   ├── vite.config.js
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx                   # Auth gate + tab routing
+│       ├── api.js                    # API client (34 endpoints)
+│       ├── index.css                 # Design system
+│       ├── components/
+│       │   ├── Sidebar.jsx           # Role-filtered navigation
+│       │   └── Header.jsx            # Top bar + user badge
+│       └── pages/
+│           ├── Login.jsx
+│           ├── Dashboard.jsx
+│           ├── Vehicles.jsx
+│           ├── Drivers.jsx
+│           ├── Trips.jsx
+│           ├── Maintenance.jsx
+│           ├── Expenses.jsx
+│           ├── Reports.jsx
+│           └── Users.jsx
+└── README.md
 ```
 
 ---
 
-## 🧠 Smart Dispatch Recommendation Engine
+## Testing
 
-When dispatching, the engine ranks available vehicles based on the entered payload (`cargo_weight`) and route (`planned_distance`):
-1. **Payload Capacity Constraint:** Eliminates vehicles where `maximum_load_capacity < cargo_weight`.
-2. **Capacity Fit Score:** Prioritizes vehicles whose capacity is closest to the cargo weight to minimize empty space and maximize resource deployment.
-3. **Efficiency Ratios:** Ranks vehicles by historical fuel efficiency (`total_distance_km / total_fuel_liters`) to lower estimated transit costs.
-4. **Driver Alignment:** Automatically pairs the vehicle with the available driver having the highest safety score.
+```bash
+cd backend
+npm test
+```
 
----
-
-## ☁️ Cloud Deployment Guide (Production)
-
-### 1. Database Setup (Supabase)
-* Register a project at [supabase.com](https://supabase.com).
-* Get your connection string (URI) from **Settings** -> **Database**.
-* Replace special characters in the password (e.g. `@` as `%40`) and add the string as `DATABASE_URL` to your backend variables.
-
-### 2. Backend Service Setup (Render)
-* Register a web service at [render.com](https://render.com) and link your repository.
-* Set the Root Directory to `backend`.
-* Config: **Build Command:** `npm install`, **Start Command:** `node server.js`.
-* Add environment variables: `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`.
-
-### 3. Frontend Client Setup (Vercel)
-* Register a project at [vercel.com](https://vercel.com) and link your repository.
-* Select `frontend` as the root folder and **Vite** as the framework preset.
-* Add Environment Variable:
-  * `VITE_API_URL`: `https://your-render-backend-url.onrender.com/api`
+The test suite covers:
+- Authentication and RBAC enforcement
+- Vehicle and driver CRUD with uniqueness constraints
+- Trip lifecycle with all 11 dispatch validation rules
+- Atomic transaction concurrency (double-booking prevention)
+- Maintenance workflow with automatic status transitions
+- Analytics and CSV export
 
 ---
 
-## 📂 Repository File Structure
+## Deployment
 
-| Path | File / Folder | Git Status | Purpose |
-|---|---|---|---|
-| `/` | `README.md` | **TRACKED** | Master specifications, setup instructions, and blueprints. |
-| `/` | `.gitignore` | **TRACKED** | Defines excluded workspace files. |
-| `backend/` | `package.json` | **TRACKED** | Backend metadata and run scripts. |
-| `backend/` | `server.js` | **TRACKED** | API server entry script. |
-| `backend/` | `src/` | **TRACKED** | Database, controllers, authentication, and router scripts. |
-| `backend/` | `scripts/` | **TRACKED** | Supabase database seeder routines. |
-| `backend/` | `tests/` | **TRACKED** | Backend integration testing code. |
-| `frontend/` | `package.json` | **TRACKED** | Frontend dependency registry. |
-| `frontend/` | `vite.config.js` | **TRACKED** | Vite compiler environment proxy configurations. |
-| `frontend/` | `index.html` | **TRACKED** | Vite index HTML template. |
-| `frontend/` | `src/` | **TRACKED** | React UI layouts, state contexts, style sheets, and api.js client. |
-| `frontend/` | `public/` | **TRACKED** | Visual templates and assets. |
-| `backend/` | `.env` | **EXCLUDED** | Private environment credential keys. |
-| `backend/` | `node_modules/` | **EXCLUDED** | Node.js backend dependencies. |
-| `frontend/` | `node_modules/` | **EXCLUDED** | Node.js frontend dependencies. |
-| `frontend/` | `dist/` | **EXCLUDED** | Compiled production distribution folder. |
+### Database (Supabase)
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy the connection URI from **Settings → Database**
+3. URL-encode special characters in the password (e.g. `@` → `%40`)
+
+### Backend (Render)
+1. Create a Web Service at [render.com](https://render.com)
+2. Set root directory to `backend`
+3. Build: `npm install` / Start: `node server.js`
+4. Add env vars: `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`
+
+### Frontend (Vercel)
+1. Import repository at [vercel.com](https://vercel.com)
+2. Set root directory to `frontend`, framework preset to **Vite**
+3. Add env var: `VITE_API_URL` → `https://your-backend.onrender.com/api`
+
+---
+
+## License
+
+MIT
